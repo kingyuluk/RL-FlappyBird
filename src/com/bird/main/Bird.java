@@ -7,7 +7,8 @@ import java.awt.image.BufferedImage;
 
 import com.bird.util.Constant;
 import com.bird.util.GameUtil;
-import com.bird.util.MusicUtil;
+//import com.bird.util.MusicUtil;
+
 
 /**
  * 小鸟类，小鸟的绘制与飞行逻辑都在此类
@@ -40,11 +41,15 @@ public class Bird {
     private final Rectangle birdRect; // 碰撞矩形
     public static final int RECT_DESCALE = 2; // 补偿碰撞矩形宽高的参数
 
-    private final GameScore countScore; // 计分器
+    private final ScoreCounter counter; // 计分器
+
+    public static final int FLAP_ACC = 34; // 小鸟向上的速度
+    public static final double DOWN_ACC = 9.8; // 重力加速度
+    public static final double T = 0.2; // 小鸟的下落函数执行的时间
 
     // 在构造器中对资源初始化
     public Bird() {
-        countScore = GameScore.getInstance(); // 计分器
+        counter = ScoreCounter.getInstance(); // 计分器
 
         // 读取小鸟图片资源
         birdImages = new BufferedImage[STATE_COUNT][IMG_COUNT];
@@ -80,17 +85,13 @@ public class Bird {
         g.drawImage(image, x - halfImgWidth, y - halfImgHeight, null); // x坐标于窗口1/4处，y坐标位窗口中心
 
         if (state == STATE_DEAD)
-            drawGameOver(g);
+            drawGameOverScreen(g);
         else if (state != STATE_FALL)
             drawScore(g);
         // 绘制矩形
 //      g.setColor(Color.black);
 //      g.drawRect((int) birdRect.getX(), (int) birdRect.getY(), (int) birdRect.getWidth(), (int) birdRect.getHeight());
     }
-
-    public static final int SPEED_UP = 32; // 小鸟向上的速度
-    public static final double g = 9.8; // 重力加速度
-    public static final double T = 0.2; // 小鸟的下落函数执行的时间
 
     private double speed = 0; // 小鸟的初速度
 
@@ -121,20 +122,20 @@ public class Bird {
         switch (state) {
             case STATE_DOWN:
                 // 自由落体
-                speed -= g * T;
-                double h = speed * T - g * T * T / 2;
+                speed -= DOWN_ACC * T;
+                double h = speed * T - DOWN_ACC * T * T / 2;
                 y = Math.min((int) (y - h), bottomBoundary);
                 birdRect.y = Math.min((int) (birdRect.y - h), bottomBoundary);
                 if (birdRect.y == bottomBoundary) {
-                    MusicUtil.playCrash();
+//                    MusicUtil.playCrash();
                     birdDead();
                 }
                 break;
 
             case STATE_FALL:
                 // 自由落体
-                speed -= g * T;
-                h = speed * T - g * T * T / 2;
+                speed -= DOWN_ACC * T;
+                h = speed * T - DOWN_ACC * T * T / 2;
                 y = Math.min((int) (y - h), bottomBoundary);
                 birdRect.y = Math.min((int) (birdRect.y - h), bottomBoundary);
                 if (birdRect.y == bottomBoundary)
@@ -163,9 +164,9 @@ public class Bird {
         if (keyIsReleased()) { // 如果按键已释放
             if (state == STATE_DEAD || state == STATE_UP || state == STATE_FALL)
                 return; // 小鸟死亡或坠落时返回
-            MusicUtil.playFly(); // 播放音效
+//            MusicUtil.playFly(); // 播放音效
             state = STATE_UP;
-            speed = SPEED_UP; // 每次振翅将速度改为上升速度
+            speed = FLAP_ACC; // 每次振翅将速度改为上升速度
             wingState = 0; // 重置翅膀状态
             keyPressed();
         }
@@ -181,14 +182,14 @@ public class Bird {
     // 小鸟坠落（已死）
     public void birdFall() {
         state = STATE_FALL;
-        MusicUtil.playCrash(); // 播放音效
+//        MusicUtil.playCrash(); // 播放音效
         speed = 0;  // 速度置0，防止小鸟继续上升与水管重叠
         // 死后画面静止片刻
-        try {
-            Thread.sleep(200);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            Thread.sleep(200);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
     }
 
     // 小鸟死亡
@@ -200,7 +201,7 @@ public class Bird {
             scoreImg = GameUtil.loadBufferedImage(Constant.SCORE_IMG_PATH);
             againImg = GameUtil.loadBufferedImage(Constant.AGAIN_IMG_PATH);
         }
-        countScore.isSaveScore(); // 判断是否保存纪录
+        counter.isSaveScore(); // 判断是否保存纪录
     }
 
     // 判断小鸟是否死亡
@@ -212,7 +213,7 @@ public class Bird {
     private void drawScore(Graphics g) {
         g.setColor(Color.white);
         g.setFont(Constant.CURRENT_SCORE_FONT);
-        String str = Long.toString(countScore.getScore());
+        String str = Long.toString(counter.getScore());
         int x = Constant.FRAME_WIDTH - GameUtil.getStringWidth(Constant.CURRENT_SCORE_FONT, str) >> 1;
         g.drawString(str, x, Constant.FRAME_HEIGHT / 10);
     }
@@ -222,7 +223,7 @@ public class Bird {
     private int flash = 0; // 图片闪烁参数
 
     // 绘制游戏结束的显示
-    private void drawGameOver(Graphics g) {
+    private void drawGameOverScreen(Graphics g) {
         // 绘制结束标志
         int x = Constant.FRAME_WIDTH - overImg.getWidth() >> 1;
         int y = Constant.FRAME_HEIGHT / 4;
@@ -238,14 +239,14 @@ public class Bird {
         g.setFont(Constant.SCORE_FONT);
         x = (Constant.FRAME_WIDTH - scoreImg.getWidth() / 2 >> 1) + SCORE_LOCATE;// 位置补偿
         y += scoreImg.getHeight() >> 1;
-        String str = Long.toString(countScore.getScore());
+        String str = Long.toString(counter.getScore());
         x -= GameUtil.getStringWidth(Constant.SCORE_FONT, str) >> 1;
         y += GameUtil.getStringHeight(Constant.SCORE_FONT, str);
         g.drawString(str, x, y);
 
         // 绘制最高分数
-        if (countScore.getBestScore() > 0) {
-            str = Long.toString(countScore.getBestScore());
+        if (counter.getBestScore() > 0) {
+            str = Long.toString(counter.getBestScore());
             x = (Constant.FRAME_WIDTH + scoreImg.getWidth() / 2 >> 1) - SCORE_LOCATE;// 位置补偿
             x -= GameUtil.getStringWidth(Constant.SCORE_FONT, str) >> 1;
             g.drawString(str, x, y);
@@ -268,7 +269,7 @@ public class Bird {
         int ImgHeight = birdImages[state][0].getHeight();
         birdRect.y = y - ImgHeight / 2 + RECT_DESCALE * 2; // 小鸟碰撞矩形坐标
 
-        countScore.reset(); // 重置计分器
+        counter.reset(); // 重置计分器
         flash = 0;
     }
 

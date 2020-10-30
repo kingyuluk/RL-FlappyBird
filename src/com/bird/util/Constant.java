@@ -3,9 +3,6 @@ package com.bird.util;
 import java.awt.Color;
 import java.awt.Font;
 
-import com.bird.main.GameElementLayer;
-import com.bird.main.Pipe;
-
 /**
  * 常量类
  * 
@@ -65,7 +62,7 @@ public class Constant {
 	public static final int TOP_BAR_HEIGHT = 20;
 
 	// 地面高度
-	public static final int GROUND_HEIGHT = 35;
+	public static final int GROUND_HEIGHT = 112;
 
 	// 上方管道加长
 	public static final int TOP_PIPE_LENGTHENING = 100;
@@ -76,8 +73,4 @@ public class Constant {
 
 	public static final Font CURRENT_SCORE_FONT = new Font("华文琥珀", Font.BOLD, 32);// 字体
 	public static final Font SCORE_FONT = new Font("华文琥珀", Font.BOLD, 24);// 字体
-
-	// 窗口可容纳的水管数量+2， 由窗口宽度、水管宽度、水管间距算得
-	public static final int FULL_PIPE = (Constant.FRAME_WIDTH
-			/ (Pipe.PIPE_HEAD_WIDTH + GameElementLayer.HORIZONTAL_INTERVAL) + 2) * 2;
 }

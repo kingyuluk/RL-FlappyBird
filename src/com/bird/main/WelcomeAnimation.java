@@ -11,15 +11,15 @@ import com.bird.util.GameUtil;
  * @author Kingyu
  *
  */
-public class GameReady {
+public class WelcomeAnimation {
 
 	private final BufferedImage titleImg;
 	private final BufferedImage noticeImg;
 
 	private int flash = 0; // 图像闪烁参数
 
-	// 构造器中进行初始化，装载图像资源
-	public GameReady() {
+	// 初始化，装载图像资源
+	public WelcomeAnimation() {
 		titleImg = GameUtil.loadBufferedImage(Constant.TITLE_IMG_PATH);
 		noticeImg = GameUtil.loadBufferedImage(Constant.NOTICE_IMG_PATH);
 	}
