@@ -1,5 +1,7 @@
 package com.bird.main;
 
+import com.bird.util.GameUtil;
+
 import static com.bird.util.Constant.FRAME_HEIGHT;
 import static com.bird.util.Constant.FRAME_WIDTH;
 import static com.bird.util.Constant.FRAME_X;
@@ -31,16 +33,29 @@ public class GameFrame extends Frame implements Runnable {
     public static final int STATE_OVER = 2; // 游戏结束
 
     private GameBackground background; // 游戏背景对象
-    private GameForeground foreground; // 游戏前景对象
+    //    private GameForeground foreground; // 游戏前景对象
     private Bird bird; // 小鸟对象
     private GameElementLayer gameElement; // 游戏元素对象
-    private GameReady ready; // 游戏未开始时对象
+    private WelcomeAnimation welcomeAnimation; // 游戏未开始时对象
+
+    class State {
+        BufferedImage observation;
+        double reward;
+        boolean terminal;
+    }
+
+    /**
+     * input_actions[0] == 1: do nothing
+     * input_actions[1] == 1: flap the bird
+     */
+    private final int[] input_actions = {1, 0};
+
 
     // 在构造器中初始化
     public GameFrame() {
         initFrame(); // 初始化游戏窗口
-        setVisible(true); // 窗口默认为不可见，设置为可见
-        initGame(); // 初始化游戏对象
+        setVisible(true); // 窗口设置为可见
+        initGame(); // 初始化游戏
     }
 
     // 初始化游戏窗口
@@ -64,42 +79,42 @@ public class GameFrame extends Frame implements Runnable {
         // 按键按下，根据游戏当前的状态调用不同的方法
         public void keyPressed(KeyEvent e) {
             int keycode = e.getKeyChar();
-            switch (gameState) {
-                case STATE_READY:
-                    if (keycode == KeyEvent.VK_SPACE) {
-                        // 游戏启动界面时按下空格，小鸟振翅一次并开始受重力影响
-                        bird.birdUp();
-                        bird.birdDown();
-                        setGameState(STATE_START); // 游戏状态改变
-                    }
-                    break;
-                case STATE_START:
-                    if (keycode == KeyEvent.VK_SPACE) {
-                        //游戏过程中按下空格则振翅一次，并持续受重力影响
-                        bird.birdUp();
-                        bird.birdDown();
-                    }
-                    break;
-                case STATE_OVER:
-                    if (keycode == KeyEvent.VK_SPACE) {
-                        //游戏结束时按下空格，重新开始游戏
-                        resetGame();
-                    }
-                    break;
+            if (keycode == KeyEvent.VK_SPACE) {
+                input_actions[1] = 1;
+                input_actions[0] = 0;
             }
+//            switch (gameState) {
+//                case STATE_READY:
+//                    if (keycode == KeyEvent.VK_SPACE) {
+//                        // 游戏启动界面时按下空格，小鸟振翅一次并开始受重力影响
+//                        bird.birdUp();
+//                        bird.birdDown();
+//                        setGameState(STATE_START); // 游戏状态改变
+//                    }
+//                    break;
+//                case STATE_START:
+//                    if (keycode == KeyEvent.VK_SPACE) {
+//                        //游戏过程中按下空格则振翅一次，并持续受重力影响
+//                        bird.birdUp();
+//                        bird.birdDown();
+//                    }
+//                    break;
+//                case STATE_OVER:
+//                    if (keycode == KeyEvent.VK_SPACE) {
+//                        //游戏结束时按下空格，重新开始游戏
+//                        resetGame();
+//                    }
+//                    break;
+//            }
         }
 
-        // 重新开始游戏
-        private void resetGame() {
-            setGameState(STATE_READY);
-            gameElement.reset();
-            bird.reset();
-        }
 
         // 按键松开，更改按键状态标志
         public void keyReleased(KeyEvent e) {
             int keycode = e.getKeyChar();
             if (keycode == KeyEvent.VK_SPACE) {
+                input_actions[1] = 0;
+                input_actions[0] = 1;
                 bird.keyReleased();
             }
         }
@@ -108,12 +123,63 @@ public class GameFrame extends Frame implements Runnable {
         }
     }
 
+    /**
+     * @param input_actions input_actions[0] == 1: do nothing
+     *                      input_actions[1] == 1: flap the bird
+     * @return State{
+     * BufferedImage observation;
+     * double reward;
+     * boolean terminal;
+     * }
+     */
+    public State frame_step(int[] input_actions) {
+
+        State nextState = new State();
+
+        switch (gameState) {
+            case STATE_READY:
+                if (input_actions[1] == 1) {
+                    // 游戏启动界面时按下空格，小鸟振翅一次并开始受重力影响
+                    bird.birdUp();
+                    bird.birdDown();
+                    setGameState(STATE_START); // 游戏状态改变
+                }
+                break;
+            case STATE_START:
+                if (input_actions[1] == 1) {
+                    //游戏过程中按下空格则振翅一次，并持续受重力影响
+                    bird.birdUp();
+                    bird.birdDown();
+                }
+                break;
+            case STATE_OVER:
+                if (input_actions[1] == 1) {
+                    //游戏结束时按下空格，重新开始游戏
+                    resetGame();
+                }
+                break;
+        }
+        nextState.reward = 0.1;
+
+        if (gameElement.isScore())
+            nextState.reward = 1;
+
+        if (bird.isDead())
+            nextState.reward = -1;
+
+        nextState.terminal = bird.isDead();
+        nextState.observation = GameUtil.imgPreprocess(bufImg);
+
+        return nextState;
+    }
+
     // 初始化游戏中的各个对象
     private void initGame() {
+        addKeyListener(new BirdKeyListener()); // 添加按键监听
         background = new GameBackground();
         gameElement = new GameElementLayer();
-        foreground = new GameForeground();
-        ready = new GameReady();
+//        foreground = new GameForeground();
+        welcomeAnimation = new WelcomeAnimation();
         bird = new Bird();
         setGameState(STATE_READY);
 
@@ -132,19 +198,19 @@ public class GameFrame extends Frame implements Runnable {
      * 单独启动一个线程，不断地快速调用repaint()，让系统对整个窗口进行重绘
      */
     public void update(Graphics g) {
-        Graphics bufG = bufImg.getGraphics(); // 获得图片画笔
-        // 使用图片画笔将需要绘制的内容绘制到图片
+        Graphics bufG = bufImg.getGraphics();
 
-        background.draw(bufG, bird); // 背景层
-        foreground.draw(bufG, bird); // 前景层
+        background.draw(bufG, bird);
+//        foreground.draw(bufG, bird);
 
-        // 鸟
-        if (gameState == STATE_READY) { // 游戏未开始
-            ready.draw(bufG);
-        } else { // 游戏结束
-            gameElement.draw(bufG, bird); // 游戏元素层
+        if (gameState == STATE_READY) {
+            welcomeAnimation.draw(bufG);
+        } else {
+            gameElement.draw(bufG, bird);
         }
-        bird.draw(bufG); // 鸟
+        bird.draw(bufG);
+        frame_step(input_actions);
+
         g.drawImage(bufImg, 0, 0, null); // 一次性将图片绘制到屏幕上
     }
 
@@ -164,6 +230,13 @@ public class GameFrame extends Frame implements Runnable {
 
     public static void setGameState(int gameState) {
         GameFrame.gameState = gameState;
+    }
+
+    // 重置游戏
+    private void resetGame() {
+        setGameState(STATE_START);
+        gameElement.reset();
+        bird.reset();
     }
 
 }
