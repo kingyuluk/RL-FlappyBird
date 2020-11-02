@@ -1,9 +1,9 @@
-package com.bird.main;
+package org.bird.main;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import com.bird.util.Constant;
-import com.bird.util.GameUtil;
+import org.bird.util.Constant;
+import org.bird.util.GameUtil;
 
 /**
  * 游戏启动界面类

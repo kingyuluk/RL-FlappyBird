@@ -1,3 +1,12 @@
+# [](https://github.com/kingyuluk/FlappyBird/compare/v1.2.2...v) (2020-11-02)
+
+
+### Bug Fixes
+
+* 修复了某种情况下小鸟死后会继续上升的bug ([6b840b6](https://github.com/kingyuluk/FlappyBird/commit/6b840b684b158c4181e9aa4986d783b99711a173))
+
+
+
 # [](https://github.com/kingyuluk/FlappyBird/compare/v1.2.2...v) (2020-08-06)
 
 

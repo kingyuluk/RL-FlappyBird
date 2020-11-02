@@ -1,14 +1,14 @@
-package com.bird.main;
+package org.bird.main;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
-import com.bird.util.Constant;
-import com.bird.util.GameUtil;
+import org.bird.util.Constant;
+import org.bird.util.GameUtil;
 
 /**
- * 游戏背景类，绘制游戏背景的内容都在此类
- * 
+ * 游戏背景类
+ *
  * @author Kingyu
  *
  */
@@ -21,10 +21,10 @@ public class GameBackground {
 
 	// 在构造器中初始化
 	public GameBackground() {
-		this.speed = 1;
+		this.speed = Constant.GAME_SPEED;
 		this.layerX = 0;
 	}
-	
+
 	static { //读取背景图片
 		BackgroundImg = GameUtil.loadBufferedImage(Constant.BG_IMG_PATH);
 	}
@@ -43,7 +43,7 @@ public class GameBackground {
 		for (int i = 0; i < count; i++) {
 			g.drawImage(BackgroundImg, imgWidth * i - layerX, Constant.FRAME_HEIGHT - imgHeight, null);
 		}
-		
+
 		if(bird.isDead()) {  //小鸟死亡则不再绘制
 			return;
 		}

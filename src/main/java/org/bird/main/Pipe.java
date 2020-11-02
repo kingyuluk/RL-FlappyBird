@@ -1,11 +1,11 @@
-package com.bird.main;
+package org.bird.main;
 
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 
-import com.bird.util.Constant;
-import com.bird.util.GameUtil;
+import org.bird.util.Constant;
+import org.bird.util.GameUtil;
 
 /**
  * 水管类
@@ -42,15 +42,13 @@ public class Pipe {
     public static final int TYPE_HOVER_NORMAL = 4;
     public static final int TYPE_HOVER_HARD = 5;
 
-    // 水管的速度
-    public static final int SPEED = 1;
     int speed;
 
     Rectangle pipeRect; // 水管的碰撞矩形
 
     // 构造器
     public Pipe() {
-        this.speed = SPEED;
+        this.speed = Constant.GAME_SPEED;
         this.width = PIPE_WIDTH;
 
         pipeRect = new Rectangle();
@@ -102,15 +100,15 @@ public class Pipe {
                 drawHoverNormal(g);
                 break;
         }
-//      //绘制碰撞矩形
-//      g.setColor(Color.black);
-//      g.drawRect((int) pipeRect.getX(), (int) pipeRect.getY(), (int) pipeRect.getWidth(), (int) pipeRect.getHeight());
-
         //鸟死后水管停止移动
         if (bird.isDead()) {
             return;
         }
         pipeLogic();
+//      //绘制碰撞矩形
+//      g.setColor(Color.black);
+//      g.drawRect((int) pipeRect.getX(), (int) pipeRect.getY(), (int) pipeRect.getWidth(), (int) pipeRect.getHeight());
+
     }
 
     // 绘制从上往下的普通水管
