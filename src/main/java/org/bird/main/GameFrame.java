@@ -1,5 +1,7 @@
 package org.bird.main;
 
+import ai.djl.modality.cv.Image;
+import ai.djl.modality.cv.ImageFactory;
 import ai.djl.modality.cv.util.NDImageUtils;
 import org.bird.rl.ActionSpace;
 import org.bird.rl.LruReplayBuffer;
@@ -18,6 +20,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import static org.bird.util.Constant.*;
 
@@ -86,11 +90,13 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
     public GameFrame(NDManager manager, ReplayBuffer replayBuffer) {
         this.manager = manager;
         this.replayBuffer = replayBuffer;
-        this.state = new State(bufImg, setObservation(bufImg, bufImg), currentReward, currentTerminal);
+//        this.state = new State(bufImg, setObservation(bufImg, bufImg), currentReward, currentTerminal);
+        this.state = new State(bufImg, initObservation(bufImg), currentReward, currentTerminal);
     }
 
+
     public GameFrame() { // Normal Mode
-        state = new State(bufImg, setObservation(bufImg, bufImg), currentReward, currentTerminal);
+        state = new State(bufImg, initObservation(bufImg), currentReward, currentTerminal);
         gameMode = NORMAL_MODE;
         manager = NDManager.newBaseManager();
         action = new NDList(manager.create(DO_NOTHING));
@@ -122,7 +128,7 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
      * aciton[1] == 1 : flap the bird
      */
     @Override
-    public Step step(NDList action, boolean training){
+    public Step step(NDList action, boolean training) {
         state.reward = currentReward;
         state.terminal = currentTerminal;
         switch (gameState) {
@@ -154,10 +160,10 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
         }
         repaint();
         state.observationImg = preBufImg;
-        state.observation = setObservation(preBufImg, preBufImg);
+//        state.observation = setObservation(preBufImg);
         preImgSet = true;
 
-        State postState = new State(bufImg, setObservation(state.getObservationImg(), bufImg), state.reward, state.terminal);
+        State postState = new State(bufImg, setObservation(bufImg), state.reward, state.terminal);
 
         FlappyBirdStep step = new FlappyBirdStep(subManager, state, postState, action);
         if (training) {
@@ -205,13 +211,43 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
     public void reset() {
     }
 
-    public NDList setObservation(BufferedImage img, BufferedImage postImg) {
-        // 获取连续帧（4）图片：复制当前帧图片 -> 堆积成4帧图片 -> 将获取到得下一帧图片替换当前第4帧，保证当前的batch图片是连续的。
-        NDArray observation = NDImageUtils.toTensor(GameUtil.imgPreprocess(img)).expandDims(0);
-        NDArray postObservation = NDImageUtils.toTensor(GameUtil.imgPreprocess(postImg)).expandDims(0);
-        return new NDList(
-                NDArrays.concat(new NDList(observation, observation, observation, postObservation), 0));
+    Queue<NDArray> imgQueue = new LinkedList<>();
+
+    public NDList initObservation(BufferedImage img) {
+        NDArray observation = NDImageUtils.toTensor(GameUtil.imgPreprocess(img));
+        for (int i = 0; i < 4; i++) {
+            imgQueue.offer(observation);
+        }
+        return new NDList(NDArrays.stack(new NDList(observation, observation, observation, observation), 0));
     }
+
+
+    public NDList setObservation(BufferedImage postImg) {
+        // 获取连续帧（4）图片：复制当前帧图片 -> 堆积成4帧图片 -> 将获取到得下一帧图片替换当前第4帧，保证当前的batch图片是连续的。
+        NDArray postObservation = NDImageUtils.toTensor(GameUtil.imgPreprocess(postImg));
+        imgQueue.remove();
+        imgQueue.offer(postObservation);
+        NDArray[] buf = new NDArray[4];
+        int i = 0;
+        for (NDArray nd : imgQueue) {
+            buf[i] = nd;
+            i++;
+        }
+        return new NDList(NDArrays.stack(new NDList(buf[0], buf[1], buf[2], buf[3]), 0));
+//        return new NDList(
+//                NDArrays.concat(new NDList(observation, observation, observation, postObservation), 0));
+    }
+
+    // TODO : may have problem
+//    public NDList setObservation(BufferedImage img, BufferedImage postImg) {
+//        // 获取连续帧（4）图片：复制当前帧图片 -> 堆积成4帧图片 -> 将获取到得下一帧图片替换当前第4帧，保证当前的batch图片是连续的。
+//
+//        NDArray observation = NDImageUtils.toTensor(GameUtil.imgPreprocess(img));
+//        NDArray postObservation = NDImageUtils.toTensor(GameUtil.imgPreprocess(postImg));
+//        NDArray a = NDArrays.stack(new NDList(observation, observation, observation, postObservation), 2);
+//        return new NDList(
+//                NDArrays.concat(new NDList(observation, observation, observation, postObservation), 0));
+//    }
 
     static final class FlappyBirdStep implements RlEnv.Step {
 

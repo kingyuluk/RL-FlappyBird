@@ -60,6 +60,7 @@ public class EpsilonGreedy implements RlAgent {
         int FRAME_PER_ACTION = 1;
         if(GameFrame.getTimeStep() % FRAME_PER_ACTION == 0) {
             if (training && RandomUtils.random() < exploreRate.getNewValue(counter++)) {
+                System.out.println("***********RANDOM ACTION***********");
                 return env.getActionSpace().randomAction();
             } else return baseAgent.chooseAction(env, training);
         }

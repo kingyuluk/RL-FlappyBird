@@ -121,9 +121,8 @@ public class QAgent implements RlAgent {
              * end for
              **/
             try (GradientCollector collector = trainer.newGradientCollector()) {
-                NDArray results = trainer.forward(step.getPreObservation()).singletonOrThrow(); // [0,0]
-
-                NDList preQ = new NDList(results.get(0).sum());
+                NDArray results = trainer.forward(step.getPreObservation()).singletonOrThrow();
+                NDList preQ = new NDList(results.get().mul(step.getAction().singletonOrThrow()).sum());
                 NDList postQ;
                 if (step.isDone()) {
                     postQ = new NDList(step.getReward());
@@ -151,13 +150,6 @@ public class QAgent implements RlAgent {
         }
 //        trainer.notifyListeners(listener -> listener.onTrainingBatch(trainer, batchData));
 
-    }
-
-    public NDArray l2LossEvaluate(NDList preQ, NDList prediction) {
-        NDArray pred = prediction.singletonOrThrow();
-        NDArray qAction = preQ.singletonOrThrow();
-        NDArray loss = qAction.sub(pred).square().mul(1.f / 2);
-        return loss.mean();
     }
 
     private NDList[] buildInputs(NDList observation, List<NDList> actions) {
