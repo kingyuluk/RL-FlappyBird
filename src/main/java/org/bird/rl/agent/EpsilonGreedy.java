@@ -57,7 +57,7 @@ public class EpsilonGreedy implements RlAgent {
     public NDList chooseAction(RlEnv env, boolean training) {
         NDManager manager = NDManager.newBaseManager();
         NDList doNothing = new NDList(manager.create(new int[] {1,0}));
-        int FRAME_PER_ACTION = 5;
+        int FRAME_PER_ACTION = 1;
         if(GameFrame.getTimeStep() % FRAME_PER_ACTION == 0) {
             if (training && RandomUtils.random() < exploreRate.getNewValue(counter++)) {
                 return env.getActionSpace().randomAction();

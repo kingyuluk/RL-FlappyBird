@@ -41,9 +41,10 @@ public class DQN {
         int epoch = 10;
         int batchSize = 32;  // size of mini batch
         int replayBufferSize = 50000; // number of previous transitions to remember;
-        int EXPLORE = 100000; // frames over which to anneal epsilon
-        float INITIAL_EPSILON = 0.01f;
-        float FINAL_EPSILON = 0.0001f; // final value of epsilon
+        int OBSERVE = 100000; // timeSteps to observe before training
+        int EXPLORE = 2000000; // frames over which to anneal epsilon
+        float INITIAL_EPSILON = 0.0001f;
+        float FINAL_EPSILON = 0.00001f; // final value of epsilon
         float rewardDiscount = 0.99f;
 
         GameFrame game = new GameFrame(manager, batchSize, replayBufferSize);
@@ -73,11 +74,16 @@ public class DQN {
                 float reward;
                 game.repaint();
                 while (true) {
-                    game.runEnv(agent, true);
+                    if(GameFrame.timeStep <= OBSERVE) {
+                        Thread.sleep(1000/30);
+                    }
+                        game.runEnv(agent, true);
                     // obtain random minibatch from replay memory
                     RlEnv.Step[] batchSteps = game.getBatch();
-                    agent.trainBatch(batchSteps);
-                    trainer.step();
+                    if(GameFrame.timeStep > OBSERVE) {
+                        agent.trainBatch(batchSteps);
+                        trainer.step();
+                    }
 
 //                    logger.info("reward: {}", (reward));
 //                    trainer.notifyListeners(listener -> listener.onEpoch(trainer));
