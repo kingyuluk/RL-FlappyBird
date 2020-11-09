@@ -1,7 +1,6 @@
 package org.bird.main;
 
-import java.awt.Graphics;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 import org.bird.util.Constant;
@@ -29,8 +28,9 @@ public class Pipe {
     public static final int PIPE_HEAD_WIDTH = imgs[1].getWidth();
     public static final int PIPE_HEAD_HEIGHT = imgs[1].getHeight();
 
-    int x, y; // 水管的坐标，相对于元素层
-    int width, height; // 水管的宽，高
+    private int x, y; // 水管的坐标，相对于元素层
+    private final int width;
+    private int height; // 水管的宽，高
 
     boolean visible; // 水管可见状态，true为可见，false表示可归还至对象池
     // 水管的类型
@@ -70,7 +70,7 @@ public class Pipe {
         this.height = height;
         this.type = type;
         this.visible = visible;
-        setRectangle(this.x, this.y, this.height);
+        setRectangle(this.x + 5, this.y, this.height); // 碰撞矩形位置补偿
     }
 
     /**
@@ -106,8 +106,8 @@ public class Pipe {
         }
         pipeLogic();
 //      //绘制碰撞矩形
-//      g.setColor(Color.black);
-//      g.drawRect((int) pipeRect.getX(), (int) pipeRect.getY(), (int) pipeRect.getWidth(), (int) pipeRect.getHeight());
+//        g.setColor(Color.white);
+//        g.drawRect((int) pipeRect.getX(), (int) pipeRect.getY(), (int) pipeRect.getWidth(), (int) pipeRect.getHeight());
 
     }
 

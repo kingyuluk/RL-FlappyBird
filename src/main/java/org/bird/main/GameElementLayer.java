@@ -7,6 +7,10 @@ import java.util.List;
 import org.bird.util.Constant;
 import org.bird.util.GameUtil;
 
+import static org.bird.main.Bird.BIRD_WIDTH;
+import static org.bird.main.Pipe.PIPE_WIDTH;
+import static org.bird.util.Constant.GAME_SPEED;
+
 /**
  * 游戏元素层
  *
@@ -34,6 +38,7 @@ public class GameElementLayer {
                 i--;
             }
         }
+        bird.drawBirdImg(g);
         // 碰撞检测
         isCollideBird(bird);
         pipeBornLogic(bird);
@@ -70,10 +75,14 @@ public class GameElementLayer {
         } else {
             // 判断最后一对水管是否完全进入游戏窗口，若进入则添加水管
             Pipe lastPipe = pipes.get(pipes.size() - 1); // 获得容器中最后一个水管
-            if (lastPipe.isInFrame()) {  // 若最后一对水管完全进入窗口，则小鸟已穿越一个间隙
-                if (pipes.size() >= PipePool.FULL_PIPE - 2) {// 若窗口中可容纳的水管已满，说明小鸟已飞到第一对水管的位置，开始记分
-                    ScoreCounter.getInstance().score(bird);
-                }
+            int currentDistance = lastPipe.getX() - bird.getBirdX() + BIRD_WIDTH / 2; // 小鸟和最后一根水管的距离
+            final int SCORE_DISTANCE = PIPE_WIDTH * 2 + PIPE_WIDTH + HORIZONTAL_INTERVAL * 2; // 小于得分距离则得分
+            if (pipes.size() >= PipePool.FULL_PIPE
+                    && currentDistance < SCORE_DISTANCE
+                    && currentDistance > SCORE_DISTANCE - GAME_SPEED) {
+                ScoreCounter.getInstance().score(bird);
+            }
+            if (lastPipe.isInFrame()) {
                 addNormalPipe(lastPipe);
             }
         }
@@ -116,8 +125,10 @@ public class GameElementLayer {
         for (Pipe pipe : pipes) {
             // 判断碰撞矩形是否有交集
             if (pipe.getPipeRect().intersects(bird.getBirdRect())) {
-//                GameFrame.currentTerminal = true;
-                bird.deadBirdFall();
+                GameFrame.setCurrentReward(-1f);
+                GameFrame.setCurrentTerminal(true);
+                GameFrame.setGameState(GameFrame.GAME_OVER);
+//                bird.deadBirdFall();
                 return;
             }
         }

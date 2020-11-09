@@ -1,7 +1,5 @@
 package org.bird.main;
 
-import ai.djl.modality.cv.Image;
-import ai.djl.modality.cv.ImageFactory;
 import ai.djl.modality.cv.util.NDImageUtils;
 import org.bird.rl.ActionSpace;
 import org.bird.rl.LruReplayBuffer;
@@ -23,6 +21,8 @@ import java.awt.image.BufferedImage;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import static org.bird.ai.DQN.EXPLORE;
+import static org.bird.ai.DQN.OBSERVE;
 import static org.bird.util.Constant.*;
 
 /**
@@ -38,7 +38,8 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
 
     private static int gameMode;
     public static final int NORMAL_MODE = 0;
-    public static final int RL_MODE = 1;
+    public static final int TRAIN_MODE = 1;
+    public static final int TEST_MODE = 2;
 
     private static int gameState; // 游戏状态
     public static final int GAME_READY = 0; // 游戏未开始
@@ -50,9 +51,6 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
     private GameElementLayer gameElement; // 游戏元素
     private WelcomeAnimation welcomeAnimation; // 欢迎界面
     private GameOverAnimation gameoverAnimation; //结束界面
-
-    public static final int OBSERVE = 500;
-    public static final int EXPLORE = 100000;
 
     public static boolean birdFlapped = false;
 
@@ -72,11 +70,13 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
      * @param batchSize        the number of steps to train on per batch
      * @param replayBufferSize the number of steps to hold in the buffer
      */
-    public GameFrame(NDManager manager, int batchSize, int replayBufferSize) { // RL MODE
+    public GameFrame(NDManager manager, int batchSize, int replayBufferSize, int gameMode) {
         this(manager, new LruReplayBuffer(batchSize, replayBufferSize));
-        initFrame(); // 初始化游戏窗口
-        setVisible(true); // 窗口设置为可见
-        setGameMode(RL_MODE);
+        setGameMode(gameMode);
+        if (gameMode != TRAIN_MODE) {
+            initFrame(); // 初始化游戏窗口
+        }
+        setVisible(true);
         initGame(); // 初始化游戏
         setGameState(GAME_START);
     }
@@ -90,7 +90,6 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
     public GameFrame(NDManager manager, ReplayBuffer replayBuffer) {
         this.manager = manager;
         this.replayBuffer = replayBuffer;
-//        this.state = new State(bufImg, setObservation(bufImg, bufImg), currentReward, currentTerminal);
         this.state = new State(bufImg, initObservation(bufImg), currentReward, currentTerminal);
     }
 
@@ -110,16 +109,16 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
     private static float currentReward = 0.1f;
     boolean preImgSet = false;
 
-    public void runEnv(RlAgent agent, boolean training) throws InterruptedException {
-        // obtain init state
-        float reward;
+    public void runEnv(RlAgent agent, boolean training) {
         // run the game
         NDList action = agent.chooseAction(this, training);
         Step step = step(action, training);
-        reward = step.getReward().getFloat();
-        if (reward == 1f)
-            GameFrame.currentReward = 0.1f;
-        System.out.println(" / TIMESTEP " + timeStep + " / " + getBirdMode() + " / " + "ACTION " + (action.singletonOrThrow().getInt(0)) + " / " + "REWARD " + reward);
+
+        System.out.println("TIMESTEP " + timeStep +
+                " / " + getBirdMode() +
+                " / " + "ACTION " + (action.singletonOrThrow().getInt(0)) +
+                " / " + "REWARD " + step.getReward().getFloat() +
+                " / " + "SCORE " + getScore());
     }
 
     /**
@@ -129,8 +128,6 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
      */
     @Override
     public Step step(NDList action, boolean training) {
-        state.reward = currentReward;
-        state.terminal = currentTerminal;
         switch (gameState) {
             case GAME_READY: // Only effective in normal mode
                 if (action.singletonOrThrow().getInt(1) == 1) {
@@ -149,7 +146,7 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
                 }
                 break;
             case GAME_OVER:
-                if (gameMode == RL_MODE) {
+                if (gameMode != NORMAL_MODE) {
                     state.reward = -1f;
                     state.terminal = true;
                     resetGame();
@@ -159,11 +156,19 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
                 break;
         }
         repaint();
+        try {
+            Thread.sleep(FPS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        state.terminal = currentTerminal;
+        state.reward = currentReward;
         state.observationImg = preBufImg;
-//        state.observation = setObservation(preBufImg);
         preImgSet = true;
 
-        State postState = new State(bufImg, setObservation(bufImg), state.reward, state.terminal);
+        State postState = new State(bufImg, setObservation(bufImg), currentReward, currentTerminal);
+        currentReward = 0.1f;  // reset reward
 
         FlappyBirdStep step = new FlappyBirdStep(subManager, state, postState, action);
         if (training) {
@@ -215,12 +220,10 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
 
     public NDList initObservation(BufferedImage img) {
         NDArray observation = NDImageUtils.toTensor(GameUtil.imgPreprocess(img));
-        for (int i = 0; i < 4; i++) {
-            imgQueue.offer(observation);
-        }
-        return new NDList(NDArrays.stack(new NDList(observation, observation, observation, observation), 0));
+            for (int i = 0; i < 4; i++)
+                imgQueue.offer(observation);
+            return new NDList(NDArrays.stack(new NDList(observation, observation, observation, observation), 1));
     }
-
 
     public NDList setObservation(BufferedImage postImg) {
         // 获取连续帧（4）图片：复制当前帧图片 -> 堆积成4帧图片 -> 将获取到得下一帧图片替换当前第4帧，保证当前的batch图片是连续的。
@@ -230,24 +233,10 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
         NDArray[] buf = new NDArray[4];
         int i = 0;
         for (NDArray nd : imgQueue) {
-            buf[i] = nd;
-            i++;
+            buf[i++] = nd;
         }
-        return new NDList(NDArrays.stack(new NDList(buf[0], buf[1], buf[2], buf[3]), 0));
-//        return new NDList(
-//                NDArrays.concat(new NDList(observation, observation, observation, postObservation), 0));
+        return new NDList(NDArrays.stack(new NDList(buf[0], buf[1], buf[2], buf[3]), 1));
     }
-
-    // TODO : may have problem
-//    public NDList setObservation(BufferedImage img, BufferedImage postImg) {
-//        // 获取连续帧（4）图片：复制当前帧图片 -> 堆积成4帧图片 -> 将获取到得下一帧图片替换当前第4帧，保证当前的batch图片是连续的。
-//
-//        NDArray observation = NDImageUtils.toTensor(GameUtil.imgPreprocess(img));
-//        NDArray postObservation = NDImageUtils.toTensor(GameUtil.imgPreprocess(postImg));
-//        NDArray a = NDArrays.stack(new NDList(observation, observation, observation, postObservation), 2);
-//        return new NDList(
-//                NDArrays.concat(new NDList(observation, observation, observation, postObservation), 0));
-//    }
 
     static final class FlappyBirdStep implements RlEnv.Step {
 
@@ -438,8 +427,8 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
 //        } else {
 //            gameElement.draw(bufG, bird);
 //        }
-        gameElement.draw(bufG, bird);
         bird.draw(bufG);
+        gameElement.draw(bufG, bird);
 //        if (gameMode == NORMAL_MODE && bird.isDead()) {
 //            gameoverAnimation.draw(bufG, bird);
 //        }
@@ -448,7 +437,9 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
 //            step(action, isTraining());
 //            action = new NDList(manager.create(DO_NOTHING));
 //        }
-        g.drawImage(bufImg, 0, 0, null); // 将图片绘制到屏幕
+        if (gameMode != TRAIN_MODE) {
+            g.drawImage(bufImg, 0, 0, null); // 将图片绘制到屏幕
+        }
         birdFlapped = false;
 
         if (timeStep <= OBSERVE)
@@ -513,5 +504,9 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
 
     public static void setCurrentReward(float currentReward) {
         GameFrame.currentReward = currentReward;
+    }
+
+    public long getScore() {
+        return bird.getCurrentScore();
     }
 }

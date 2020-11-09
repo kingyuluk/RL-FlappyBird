@@ -44,7 +44,7 @@ public class EpsilonGreedy implements RlAgent {
     /**
      * Constructs an {@link ai.djl.modality.rl.agent.EpsilonGreedy}.
      *
-     * @param baseAgent the (presumably model-based) agent to use for exploitation and to train
+     * @param baseAgent   the (presumably model-based) agent to use for exploitation and to train
      * @param exploreRate the probability of taking a random action
      */
     public EpsilonGreedy(RlAgent baseAgent, Tracker exploreRate) {
@@ -52,23 +52,26 @@ public class EpsilonGreedy implements RlAgent {
         this.exploreRate = exploreRate;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public NDList chooseAction(RlEnv env, boolean training) {
         NDManager manager = NDManager.newBaseManager();
-        NDList doNothing = new NDList(manager.create(new int[] {1,0}));
+        NDList doNothing = new NDList(manager.create(new int[]{1, 0}));
         int FRAME_PER_ACTION = 1;
-        if(GameFrame.getTimeStep() % FRAME_PER_ACTION == 0) {
+        if (GameFrame.getTimeStep() % FRAME_PER_ACTION == 0) {
             if (training && RandomUtils.random() < exploreRate.getNewValue(counter++)) {
                 System.out.println("***********RANDOM ACTION***********");
                 return env.getActionSpace().randomAction();
             } else return baseAgent.chooseAction(env, training);
-        }
-        else
+        } else
             return doNothing;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void trainBatch(Step[] batchSteps) {
         baseAgent.trainBatch(batchSteps);
