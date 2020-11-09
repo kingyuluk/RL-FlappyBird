@@ -89,7 +89,7 @@ public class QAgent implements RlAgent {
 //                trainer.evaluate(batchifier.batchify(inputs)).singletonOrThrow().squeeze(-1);
         NDArray actionScores = trainer.evaluate(env.getObservation()).singletonOrThrow().get(0);
         int bestAction = Math.toIntExact(actionScores.argMax().getLong());
-        System.out.print("Q_MAX " + actionScores.max().getFloat());
+//        System.out.print("Q_MAX " + actionScores.max().getFloat());
         return actionSpace.get(bestAction);
     }
 
@@ -121,15 +121,14 @@ public class QAgent implements RlAgent {
              * end for
              **/
             try (GradientCollector collector = trainer.newGradientCollector()) {
-                NDArray results = trainer.forward(step.getPreObservation()).singletonOrThrow();
-                NDList preQ = new NDList(results.get().mul(step.getAction().singletonOrThrow()).sum());
+                NDArray results = trainer.forward(step.getPreObservation()).singletonOrThrow();  // QValue_batch
+                NDList preQ = new NDList(results.mul(step.getAction().singletonOrThrow()).sum());
                 NDList postQ;
                 if (step.isDone()) {
                     postQ = new NDList(step.getReward());
 //                    postQ = new NDList(manager.create(new float[]{-1 * step.getReward().getFloat(), step.getReward().getFloat()}));
                 } else {
-                    NDArray bestAction = results.get("1:").max();
-                    postQ = new NDList(bestAction.mul(rewardDiscount).add(step.getReward()));
+                    postQ = new NDList(results.max().mul(rewardDiscount).add(step.getReward()));
 //                    NDArray predictionQ = bestAction.mul(rewardDiscount).add(step.getReward());
 //                    postQ = new NDList(manager.create(new float[]{-1 * predictionQ.getFloat(), predictionQ.getFloat()}));
                 }

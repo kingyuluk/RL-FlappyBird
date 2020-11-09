@@ -52,14 +52,14 @@ public class Constant {
 
     public static final String SCORE_FILE_PATH = "src/main/resources/score"; // 分数文件路径
 
-    // 游戏速度
+    // 游戏速度（水管及背景层的移动速度）
    public static final int GAME_SPEED = 5;
 
     // 游戏背景色
     public static final Color BG_COLOR = new Color(0x000000);
 
     // 游戏刷新率
-    public static final int GAME_INTERVAL = 1000 / 30;
+    public static final int FPS = 1000 / 30;
 
     // 标题栏高度
     public static final int TOP_BAR_HEIGHT = 20;

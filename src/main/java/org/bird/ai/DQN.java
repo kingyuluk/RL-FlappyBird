@@ -24,45 +24,47 @@ import ai.djl.training.tracker.LinearTracker;
 import ai.djl.training.tracker.Tracker;
 import org.apache.commons.cli.ParseException;
 import org.bird.main.GameFrame;
+import org.bird.util.Arguments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DQN {
     private static final Logger logger = LoggerFactory.getLogger(DQN.class);
 
-    public static void main(String[] arg) throws ParseException {
-        DQN.train();
+    public final static int OBSERVE = 1000; // timeSteps to observe before training
+    public final static int EXPLORE = 100000; // frames over which to anneal epsilon
+
+    private DQN() {
     }
 
-    public static void train() throws ParseException {
-//        Arguments arguments = Arguments.parseArgs(args);
-        NDManager manager = NDManager.newBaseManager();
+    public static void main(String[] args) {
+        DQN.train(args);
+    }
 
-        int epoch = 10;
+    public static void train(String[] args) {
+        Arguments arguments = Arguments.parseArgs(args);
+
+        int gameMode = 1;  // 1:train mode   2:test mode
         int batchSize = 32;  // size of mini batch
         int replayBufferSize = 50000; // number of previous transitions to remember;
-        int OBSERVE = 100; // timeSteps to observe before training
-        int EXPLORE = 200000; // frames over which to anneal epsilon
-        float INITIAL_EPSILON = 0.0001f;
-        float FINAL_EPSILON = 0.00001f; // final value of epsilon
         float rewardDiscount = 0.99f;  // decay rate of past observations
+        float INITIAL_EPSILON = 0.01f;
+        float FINAL_EPSILON = 0.0001f;
 
-        GameFrame game = new GameFrame(manager, batchSize, replayBufferSize);
+        GameFrame game = new GameFrame(NDManager.newBaseManager(), batchSize, replayBufferSize, gameMode);
+
         SequentialBlock block = getBlock();
 
         try (Model model = Model.newInstance("QNetwork")) {
             model.setBlock(block);
+
             DefaultTrainingConfig config = setupTrainingConfig();
             try (Trainer trainer = model.newTrainer(config)) {
-
-                Shape inputShape = new Shape(batchSize, 1, 80, 80);
-
-                trainer.initialize(inputShape);
+                trainer.initialize(new Shape(1, 4, 80, 80));
 
                 trainer.notifyListeners(listener -> listener.onTrainingBegin(trainer));
 
                 RlAgent agent = new QAgent(trainer, rewardDiscount);
-
                 Tracker exploreRate =
                         new LinearTracker.Builder()
                                 .setBaseValue(INITIAL_EPSILON)
@@ -71,42 +73,33 @@ public class DQN {
                                 .build();
                 agent = new EpsilonGreedy(agent, exploreRate);
 
-                float reward;
-                game.repaint();
                 while (true) {
-                    if(GameFrame.timeStep <= OBSERVE) {
-                        Thread.sleep(1000/30);
-                    }
-                        game.runEnv(agent, true);
-                    // obtain random minibatch from replay memory
+                    game.runEnv(agent, true);
+                    // obtain random miniBatch from replay memory
                     RlEnv.Step[] batchSteps = game.getBatch();
-                    if(GameFrame.timeStep > OBSERVE) {
+                    if (GameFrame.timeStep > OBSERVE) {
                         agent.trainBatch(batchSteps);
                         trainer.step();
                     }
-
-//                    logger.info("reward: {}", (reward));
-//                    trainer.notifyListeners(listener -> listener.onEpoch(trainer));
                 }
+//                    trainer.notifyListeners(listener -> listener.onEpoch(trainer));
 
 //                // 输出神经网络的结构
 //                Shape currentShape = new Shape(1, 4, 80, 80);
 //                for (int i = 0; i < block.getChildren().size(); i++) {
-//                    Shape[] newShape = block.getChildren().get(i).getValue().getOutputShapes(manager, new Shape[]{currentShape});
+//                    Shape[] newShape = block.getChildren().get(i).getValue().getOutputShapes(NDManager.newBaseManager(), new Shape[]{currentShape});
 //                    currentShape = newShape[0];
 //                    System.out.println(block.getChildren().get(i).getKey() + " layer output : " + currentShape);
 //                }
 
 
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
 
     }
 
     public static SequentialBlock getBlock() {
-        // 2个卷积层（8*8*4*32，4*4*32*64，3*3*64*64），2个(2*2)池化层，3个Relu激活函数，2个全连接层
+        // conv（8*8*4*32) -> maxPool -> conv(4*4*32*64) -> maxPool -> conv(3*3*64*64）-> fc  -> fc [shape(1,2)]
         return new SequentialBlock()
                 .add(Conv2d.builder()
                         .setKernelShape(new Shape(8, 8))
