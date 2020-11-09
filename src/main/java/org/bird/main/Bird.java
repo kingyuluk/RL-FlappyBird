@@ -106,9 +106,9 @@ public class Bird {
                 double h = speed * T - DOWN_ACC * T * T / 2;
                 y = Math.min((int) (y - h), bottomBoundary);
                 birdRect.y = Math.min((int) (birdRect.y - h), bottomBoundary);
-                if (birdRect.y == bottomBoundary) {
+                if (birdRect.y >= bottomBoundary) {
 //                    MusicUtil.playCrash();
-                    birdDead();
+                    GameFrame.setGameState(GameFrame.GAME_OVER);
                 }
                 break;
 
@@ -118,8 +118,9 @@ public class Bird {
                 h = speed * T - DOWN_ACC * T * T / 2;
                 y = Math.min((int) (y - h), bottomBoundary);
                 birdRect.y = Math.min((int) (birdRect.y - h), bottomBoundary);
-                if (birdRect.y == bottomBoundary)
-                    birdDead();
+                if (birdRect.y >= bottomBoundary) {
+                    GameFrame.setGameState(GameFrame.GAME_OVER);
+                }
                 break;
 
             case BIRD_DEAD:

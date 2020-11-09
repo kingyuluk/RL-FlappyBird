@@ -53,7 +53,7 @@ public class Constant {
     public static final String SCORE_FILE_PATH = "src/main/resources/score"; // 分数文件路径
 
     // 游戏速度
-   public static final int GAME_SPEED = 4;
+   public static final int GAME_SPEED = 5;
 
     // 游戏背景色
     public static final Color BG_COLOR = new Color(0x000000);

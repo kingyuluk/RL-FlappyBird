@@ -113,7 +113,7 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
         reward = step.getReward().getFloat();
         if (reward == 1f)
             GameFrame.currentReward = 0.1f;
-        System.out.println("TIMESTEP " + timeStep + " / " + getBirdMode() + " / " + "ACTION " + (action.singletonOrThrow().getInt(0)) + " / " + "REWARD " + reward);
+        System.out.println(" / TIMESTEP " + timeStep + " / " + getBirdMode() + " / " + "ACTION " + (action.singletonOrThrow().getInt(0)) + " / " + "REWARD " + reward);
     }
 
     /**

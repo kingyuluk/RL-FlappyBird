@@ -12,6 +12,10 @@
  */
 package org.bird.rl.agent;
 
+import ai.djl.ndarray.NDArrays;
+import ai.djl.ndarray.NDManager;
+import ai.djl.ndarray.index.NDIndex;
+import ai.djl.ndarray.types.Shape;
 import org.bird.main.GameFrame;
 import org.bird.rl.ActionSpace;
 import org.bird.rl.env.RlEnv;
@@ -85,7 +89,7 @@ public class QAgent implements RlAgent {
 //                trainer.evaluate(batchifier.batchify(inputs)).singletonOrThrow().squeeze(-1);
         NDArray actionScores = trainer.evaluate(env.getObservation()).singletonOrThrow().get(0);
         int bestAction = Math.toIntExact(actionScores.argMax().getLong());
-//        System.out.println(bestAction);
+        System.out.print("Q_MAX " + actionScores.max().getFloat());
         return actionSpace.get(bestAction);
     }
 
@@ -119,16 +123,19 @@ public class QAgent implements RlAgent {
             try (GradientCollector collector = trainer.newGradientCollector()) {
                 NDArray results = trainer.forward(step.getPreObservation()).singletonOrThrow(); // [0,0]
 
-                NDList preQ = new NDList(results.get(0));
+                NDList preQ = new NDList(results.get(0).sum());
                 NDList postQ;
                 if (step.isDone()) {
-                    postQ = new NDList((step.getReward()));
+                    postQ = new NDList(step.getReward());
+//                    postQ = new NDList(manager.create(new float[]{-1 * step.getReward().getFloat(), step.getReward().getFloat()}));
                 } else {
                     NDArray bestAction = results.get("1:").max();
                     postQ = new NDList(bestAction.mul(rewardDiscount).add(step.getReward()));
+//                    NDArray predictionQ = bestAction.mul(rewardDiscount).add(step.getReward());
+//                    postQ = new NDList(manager.create(new float[]{-1 * predictionQ.getFloat(), predictionQ.getFloat()}));
                 }
 
-                NDArray lossValue = l2LossEvaluate(preQ, postQ);
+                NDArray lossValue = trainer.getLoss().evaluate(postQ, preQ);
                 collector.backward(lossValue);
                 batchData.getLabels().put(postQ.get(0).getDevice(), postQ);
                 batchData.getPredictions().put(preQ.get(0).getDevice(), preQ);
