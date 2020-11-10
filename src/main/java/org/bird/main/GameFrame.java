@@ -162,15 +162,13 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
             e.printStackTrace();
         }
 
-        state.terminal = currentTerminal;
-        state.reward = currentReward;
-        state.observationImg = preBufImg;
+        State preState = new State(preBufImg, initObservation(bufImg), currentReward, currentTerminal);
         preImgSet = true;
 
         State postState = new State(bufImg, setObservation(bufImg), currentReward, currentTerminal);
         currentReward = 0.1f;  // reset reward
 
-        FlappyBirdStep step = new FlappyBirdStep(subManager, state, postState, action);
+        FlappyBirdStep step = new FlappyBirdStep(subManager, preState, postState, action);
         if (training) {
             replayBuffer.addStep(step);
         }
@@ -219,10 +217,22 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
     Queue<NDArray> imgQueue = new LinkedList<>();
 
     public NDList initObservation(BufferedImage img) {
+        // if queue is empty, init observation队为空则初始化，否则将队里的图片存入NDList作为preObservation
         NDArray observation = NDImageUtils.toTensor(GameUtil.imgPreprocess(img));
+        if (imgQueue.size() == 0) {
             for (int i = 0; i < 4; i++)
                 imgQueue.offer(observation);
             return new NDList(NDArrays.stack(new NDList(observation, observation, observation, observation), 1));
+        }
+        // else save the img the queue to the NDList as preObservation
+        else {
+            NDArray[] buf = new NDArray[4];
+            int i = 0;
+            for (NDArray nd : imgQueue) {
+                buf[i++] = nd;
+            }
+            return new NDList(NDArrays.stack(new NDList(buf[0], buf[1], buf[2], buf[3]), 1));
+        }
     }
 
     public NDList setObservation(BufferedImage postImg) {
