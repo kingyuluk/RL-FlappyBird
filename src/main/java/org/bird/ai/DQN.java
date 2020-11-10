@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 public class DQN {
     private static final Logger logger = LoggerFactory.getLogger(DQN.class);
 
-    public final static int OBSERVE = 1000; // timeSteps to observe before training
+    public final static int OBSERVE = 10000; // timeSteps to observe before training
     public final static int EXPLORE = 100000; // frames over which to anneal epsilon
 
     private DQN() {
@@ -48,7 +48,7 @@ public class DQN {
         int batchSize = 32;  // size of mini batch
         int replayBufferSize = 50000; // number of previous transitions to remember;
         float rewardDiscount = 0.99f;  // decay rate of past observations
-        float INITIAL_EPSILON = 0.01f;
+        float INITIAL_EPSILON = 0.05f;
         float FINAL_EPSILON = 0.0001f;
 
         GameFrame game = new GameFrame(NDManager.newBaseManager(), batchSize, replayBufferSize, gameMode);
