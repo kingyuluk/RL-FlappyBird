@@ -44,11 +44,11 @@ public class DQN {
     public static void train(String[] args) {
         Arguments arguments = Arguments.parseArgs(args);
 
-        int gameMode = 1;  // 1:train mode   2:test mode
+        int gameMode = 2;  // 1:train mode   2:test mode
         int batchSize = 32;  // size of mini batch
         int replayBufferSize = 50000; // number of previous transitions to remember;
         float rewardDiscount = 0.99f;  // decay rate of past observations
-        float INITIAL_EPSILON = 0.05f;
+        float INITIAL_EPSILON = 0.1f;
         float FINAL_EPSILON = 0.0001f;
 
         GameFrame game = new GameFrame(NDManager.newBaseManager(), batchSize, replayBufferSize, gameMode);

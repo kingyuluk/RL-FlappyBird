@@ -27,8 +27,6 @@ public class Bird {
     // 小鸟的状态
     private int state;
     public static final int BIRD_READY = 0;
-    public static final int BIRD_UP = 1;
-    public static final int BIRD_DOWN = 2;
     public static final int BIRD_FALL = 3;
     public static final int BIRD_DEAD = 4;
 
@@ -36,9 +34,6 @@ public class Bird {
     public static final int RECT_DESCALE = 2; // 补偿碰撞矩形宽高的参数
 
     private final ScoreCounter counter; // 计分器
-    public static final int FLAP_ACC = 40; // 小鸟向上的速度
-    public static final double DOWN_ACC = 16; // 重力加速度
-    public static final double T = 0.2; // 小鸟的下落函数执行的时间
 
     static BufferedImage birdImages; // 小鸟图片，static保证图片只加载一次
 
@@ -59,8 +54,8 @@ public class Bird {
         y = Constant.FRAME_HEIGHT >> 1;
 
         // 初始化碰撞矩形
-        int rectX = x - BIRD_WIDTH / 2;
-        int rectY = y - BIRD_HEIGHT / 2 + 4; // 位置补偿
+        int rectX = x - (BIRD_WIDTH >> 1);
+        int rectY = y - (BIRD_HEIGHT >> 1) + 4; // 位置补偿
         birdRect = new Rectangle(rectX + RECT_DESCALE, rectY + RECT_DESCALE * 2, BIRD_WIDTH - RECT_DESCALE * 3,
                 BIRD_HEIGHT - RECT_DESCALE * 4); // 碰撞矩形的坐标与小鸟相同
     }
@@ -71,7 +66,7 @@ public class Bird {
 
     // 绘制方法
     public void draw(Graphics g) {
-        fly();
+        movement();
         g.drawImage(birdImages, x - halfImgWidth, y - halfImgHeight, null); // x坐标于窗口1/4处，y坐标位窗口中心
 //        if (state != BIRD_FALL && state != BIRD_DEAD)
 //            drawScore(g);
@@ -80,11 +75,9 @@ public class Bird {
 //        g.drawRect((int) birdRect.getX(), (int) birdRect.getY(), (int) birdRect.getWidth(), (int) birdRect.getHeight());
     }
 
-    public void drawBirdImg(Graphics g){
+    public void drawBirdImg(Graphics g) {
         g.drawImage(birdImages, x - halfImgWidth, y - halfImgHeight, null);
     }
-
-    private double speed = 0; // 小鸟的初速度
 
     private boolean keyRelease = true; // 按键状态
 
@@ -100,91 +93,47 @@ public class Bird {
         return keyRelease;
     }
 
-    // 小鸟的飞行逻辑
-    private void fly() {
-        // 下方边界: 窗口的高度 - 地面的高度 - 小鸟图片的高度
-        final int bottomBoundary = Constant.FRAME_HEIGHT - Constant.GROUND_HEIGHT - (birdImages.getHeight() >> 1);
-        final int topBoundary = 30;
+    public static final int ACC_FLAP = 7; // players speed on flapping
+    public static final double ACC_Y = 1; // players downward acceleration
+    public static final int MAX_VEL_Y = 10; // max vel along Y, max descend speed
+    public static final int BOTTOM_BOUNDARY = Constant.FRAME_HEIGHT - Constant.GROUND_HEIGHT - (birdImages.getHeight() >> 1);
+    public static final int TOP_BOUNDARY = 30;
 
-        switch (state) {
-            case BIRD_DOWN:
-                // 自由落体
-                keyReleased();
-                speed -= DOWN_ACC * T;
-                double h = speed * T - DOWN_ACC * T * T / 2;
-                y = Math.min((int) (y - h), bottomBoundary);
-                birdRect.y = (int) (birdRect.y - h);
-                if (birdRect.y >= bottomBoundary - 10) {
+    private int velocity = 0; // bird's velocity along Y, default same as playerFlapped
+
+    // bird's movement
+    private void movement() {
+        // bottom boundary
+
+        keyReleased();
+        if (velocity < MAX_VEL_Y)
+            velocity -= ACC_Y;
+        y = Math.min((y - velocity), BOTTOM_BOUNDARY);
+        birdRect.y = birdRect.y - velocity;
+        if (birdRect.y >= BOTTOM_BOUNDARY - 10) {
 //                    MusicUtil.playCrash();
-                    GameFrame.setCurrentReward(-1f);
-                    GameFrame.setCurrentTerminal(true);
-                    GameFrame.setGameState(GameFrame.GAME_OVER);
-                }
-                break;
-
-            case BIRD_FALL:
-                // 自由落体
-                speed -= DOWN_ACC * T;
-                h = speed * T - DOWN_ACC * T * T / 2;
-                y = Math.min((int) (y - h), bottomBoundary);
-                birdRect.y = (int) (birdRect.y - h);
-                if (birdRect.y >= bottomBoundary - 10) {
-                    GameFrame.setCurrentReward(-1f);
-                    GameFrame.setCurrentTerminal(true);
-                    GameFrame.setGameState(GameFrame.GAME_OVER);
-                }
-                break;
-
-            case BIRD_DEAD:
-                GameFrame.setGameState(GameFrame.GAME_OVER);
-                break;
+            GameFrame.setCurrentReward(-1f);
+            GameFrame.setCurrentTerminal(true);
+            GameFrame.setGameState(GameFrame.GAME_OVER);
         }
-
-        // 控制上方边界
-        if (birdRect.y < topBoundary) {
-            birdRect.y = topBoundary;
-            y = topBoundary;
+        if (birdRect.y < TOP_BOUNDARY) {
+            GameFrame.setCurrentReward(-1f);
+            GameFrame.setCurrentTerminal(true);
+            GameFrame.setGameState(GameFrame.GAME_OVER);
+            birdRect.y = TOP_BOUNDARY;
+            y = TOP_BOUNDARY;
         }
 
     }
 
-    // 小鸟振翅
     public void birdFlap() {
         if (keyIsReleased()) {
             keyPressed();
             if (state == BIRD_DEAD || state == BIRD_FALL)
                 return;
 //            MusicUtil.playFly(); // 播放音效
-            speed = FLAP_ACC; // 每次振翅将速度改为上升速度
+            velocity = ACC_FLAP; // 每次振翅将速度改为上升速度
         }
-    }
-
-    // 小鸟下降
-    public void birdFall() {
-        if (state == BIRD_DEAD || state == BIRD_FALL)
-            return;
-        state = BIRD_DOWN;
-    }
-
-    // 小鸟坠落（已死）
-    public void deadBirdFall() {
-        if (GameFrame.getGameMode() != GameFrame.NORMAL_MODE) {
-            GameFrame.setCurrentTerminal(true);
-            GameFrame.setCurrentReward(-1f);
-            state = BIRD_DEAD;
-            return;
-        }
-        state = BIRD_FALL;
-//        MusicUtil.playCrash(); // 播放音效
-        speed = 0;  // 速度置0，防止小鸟继续上升与水管重叠
-    }
-
-    // 小鸟死亡
-    public void birdDead() {
-        GameFrame.setCurrentTerminal(true);
-        GameFrame.setCurrentReward(-1f);
-        state = BIRD_DEAD;
-        counter.isSaveScore(); // 判断是否保存纪录
     }
 
     // 判断小鸟是否死亡
@@ -205,7 +154,7 @@ public class Bird {
     public void reset() {
         state = BIRD_READY; // 小鸟状态
         y = Constant.FRAME_HEIGHT >> 1; // 小鸟坐标
-        speed = 0; // 小鸟速度
+        velocity = 0; // 小鸟速度
 
         int ImgHeight = birdImages.getHeight();
         birdRect.y = y + 4 - ImgHeight / 2 + RECT_DESCALE * 2; // 小鸟碰撞矩形坐标
