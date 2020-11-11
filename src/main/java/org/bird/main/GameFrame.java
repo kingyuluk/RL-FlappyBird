@@ -60,7 +60,7 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
      */
     private NDList action;  // for Normal Mode
     private final NDManager manager;
-    private final State state;
+    private State state;
     private ReplayBuffer replayBuffer;
 
     /**
@@ -131,18 +131,13 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
         switch (gameState) {
             case GAME_READY: // Only effective in normal mode
                 if (action.singletonOrThrow().getInt(1) == 1) {
-                    // 游戏启动界面时接收到动作，小鸟振翅并开始游戏
                     bird.birdFlap();
-                    bird.birdFall();
-                    setGameState(GAME_START); // 游戏状态改变
+                    setGameState(GAME_START); // ame start
                 }
                 break;
             case GAME_START:
-                bird.birdFall();
                 if (action.singletonOrThrow().getInt(1) == 1) {
-                    //游戏过程中接收到动作则振翅一次
                     bird.birdFlap();
-                    bird.birdFall();
                 }
                 break;
             case GAME_OVER:
@@ -151,7 +146,7 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
                     state.terminal = true;
                     resetGame();
                 } else if (action.singletonOrThrow().getInt(1) == 1) {
-                    resetGame();  //游戏结束时接收到动作重置游戏
+                    resetGame();
                 }
                 break;
         }
@@ -164,6 +159,7 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
 
         State preState = new State(preBufImg, initObservation(bufImg), currentReward, currentTerminal);
         preImgSet = true;
+        state = preState;
 
         State postState = new State(bufImg, setObservation(bufImg), currentReward, currentTerminal);
         currentReward = 0.1f;  // reset reward
@@ -307,7 +303,6 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
          */
         @Override
         public boolean isDone() {
-//            return GameFrame.isDraw();
             return postState.isTerminal();
         }
 
@@ -320,8 +315,8 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
     }
 
     private static final class State {
-        private NDList observation;
-        private BufferedImage observationImg;
+        private final NDList observation;
+        private final BufferedImage observationImg;
         private float reward;
         private boolean terminal;
 
@@ -331,14 +326,6 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
             this.reward = reward;
             this.terminal = terminal;
         }
-
-        /**
-         * {@inheritDoc}
-         */
-        private BufferedImage getObservationImg() {
-            return observationImg;
-        }
-
 
         private NDList getObservation() {
             return this.observation;

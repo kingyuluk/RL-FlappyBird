@@ -12,11 +12,6 @@
  */
 package org.bird.rl.agent;
 
-import ai.djl.ndarray.NDArrays;
-import ai.djl.ndarray.NDManager;
-import ai.djl.ndarray.index.NDIndex;
-import ai.djl.ndarray.types.Shape;
-import org.bird.main.GameFrame;
 import org.bird.rl.ActionSpace;
 import org.bird.rl.env.RlEnv;
 import org.bird.rl.env.RlEnv.Step;
@@ -28,11 +23,8 @@ import ai.djl.training.listener.TrainingListener.BatchData;
 import ai.djl.translate.Batchifier;
 
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
 
 /**
  * An {@link RlAgent} that implements Q or Deep-Q Learning.
@@ -121,7 +113,7 @@ public class QAgent implements RlAgent {
              * end for
              **/
             try (GradientCollector collector = trainer.newGradientCollector()) {
-                NDArray results = trainer.forward(step.getPreObservation()).singletonOrThrow();  // QValue_batch
+                NDArray results = trainer.forward(step.getPostObservation()).singletonOrThrow();  // QValue_batch
                 NDList preQ = new NDList(results.mul(step.getAction().singletonOrThrow()).sum());
                 NDList postQ;
                 if (step.isDone()) {
