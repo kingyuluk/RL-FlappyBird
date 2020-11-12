@@ -1,4 +1,4 @@
-package org.bird.util;
+package org.kingyu.rlflappybird.util;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -11,8 +11,8 @@ import java.awt.Font;
 
 public class Constant {
     // 窗口尺寸
-    public static final int FRAME_WIDTH = 420;
-    public static final int FRAME_HEIGHT = 640;
+    public static final int FRAME_WIDTH = 288;
+    public static final int FRAME_HEIGHT = 512;
 
     // 游戏标题
     public static final String GAME_TITLE = "Flappy Bird written by Kingyu";
@@ -53,7 +53,7 @@ public class Constant {
     public static final String SCORE_FILE_PATH = "src/main/resources/score"; // 分数文件路径
 
     // 游戏速度（水管及背景层的移动速度）
-   public static final int GAME_SPEED = 5;
+   public static final int GAME_SPEED = 4;
 
     // 游戏背景色
     public static final Color BG_COLOR = new Color(0x000000);

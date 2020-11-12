@@ -1,14 +1,9 @@
-package org.bird.util;
+package org.kingyu.rlflappybird.util;
 
 import ai.djl.Device;
-import ai.djl.util.JsonUtils;
-import com.google.gson.reflect.TypeToken;
-
-import java.lang.reflect.Type;
-import java.util.Map;
 
 import org.apache.commons.cli.*;
-import org.bird.main.GameFrame;
+import org.kingyu.rlflappybird.main.Game;
 
 public class Arguments {
 
@@ -24,7 +19,7 @@ public class Arguments {
             gameMode = Math.min(Integer.parseInt(cmd.getOptionValue("game-mode")), gameMode);
         }
         else{
-            gameMode = GameFrame.TEST_MODE;
+            gameMode = Game.UI_MODE;
         }
 
         if (cmd.hasOption("max-gpus")) {

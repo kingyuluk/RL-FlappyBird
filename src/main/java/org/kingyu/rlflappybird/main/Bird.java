@@ -1,12 +1,12 @@
-package org.bird.main;
+package org.kingyu.rlflappybird.main;
 
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 
-import org.bird.util.Constant;
-import org.bird.util.GameUtil;
+import org.kingyu.rlflappybird.util.Constant;
+import org.kingyu.rlflappybird.util.GameUtil;
 //import org.bird.util.MusicUtil;
 
 
@@ -103,27 +103,19 @@ public class Bird {
 
     // bird's movement
     private void movement() {
-        // bottom boundary
-
         keyReleased();
         if (velocity < MAX_VEL_Y)
             velocity -= ACC_Y;
-        y = Math.min((y - velocity), BOTTOM_BOUNDARY);
-        birdRect.y = birdRect.y - velocity;
+        if(y > TOP_BOUNDARY) {
+            y = Math.min((y - velocity), BOTTOM_BOUNDARY);
+            birdRect.y = birdRect.y - velocity;
+        }
         if (birdRect.y >= BOTTOM_BOUNDARY - 10) {
 //                    MusicUtil.playCrash();
-            GameFrame.setCurrentReward(-1f);
-            GameFrame.setCurrentTerminal(true);
-            GameFrame.setGameState(GameFrame.GAME_OVER);
+            Game.setCurrentReward(-1f);
+            Game.setCurrentTerminal(true);
+            Game.setGameState(Game.GAME_OVER);
         }
-        if (birdRect.y < TOP_BOUNDARY) {
-            GameFrame.setCurrentReward(-1f);
-            GameFrame.setCurrentTerminal(true);
-            GameFrame.setGameState(GameFrame.GAME_OVER);
-            birdRect.y = TOP_BOUNDARY;
-            y = TOP_BOUNDARY;
-        }
-
     }
 
     public void birdFlap() {
@@ -132,7 +124,7 @@ public class Bird {
             if (state == BIRD_DEAD || state == BIRD_FALL)
                 return;
 //            MusicUtil.playFly(); // 播放音效
-            velocity = ACC_FLAP; // 每次振翅将速度改为上升速度
+            velocity = ACC_FLAP;
         }
     }
 

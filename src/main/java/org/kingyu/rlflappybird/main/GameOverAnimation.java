@@ -1,7 +1,7 @@
-package org.bird.main;
+package org.kingyu.rlflappybird.main;
 
-import org.bird.util.Constant;
-import org.bird.util.GameUtil;
+import org.kingyu.rlflappybird.util.Constant;
+import org.kingyu.rlflappybird.util.GameUtil;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;

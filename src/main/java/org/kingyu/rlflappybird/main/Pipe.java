@@ -1,10 +1,10 @@
-package org.bird.main;
+package org.kingyu.rlflappybird.main;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-import org.bird.util.Constant;
-import org.bird.util.GameUtil;
+import org.kingyu.rlflappybird.util.Constant;
+import org.kingyu.rlflappybird.util.GameUtil;
 
 /**
  * 水管类
@@ -182,7 +182,6 @@ public class Pipe {
         return pipeRect;
     }
 
-    // 各参数的写入与获取
 //  public void setX(int x) {
 //      this.x = x;
 //  }

@@ -10,11 +10,10 @@
  * OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package org.bird.rl;
+package org.kingyu.rlflappybird.rl;
 
-import org.bird.rl.ReplayBuffer;
-import org.bird.rl.env.RlEnv.Step;
 import ai.djl.util.RandomUtils;
+import org.kingyu.rlflappybird.rl.env.RlEnv;
 
 /**
  * A simple {@link ReplayBuffer} that randomly selects across the whole buffer, but always removes
@@ -24,7 +23,7 @@ public class LruReplayBuffer implements ReplayBuffer {
 
     private int batchSize;
 
-    private Step[] steps;
+    private RlEnv.Step[] steps;
     private int firstStepIndex;
     private int stepsActualSize;
 
@@ -36,7 +35,7 @@ public class LruReplayBuffer implements ReplayBuffer {
      */
     public LruReplayBuffer(int batchSize, int bufferSize) {
         this.batchSize = batchSize;
-        steps = new Step[bufferSize];
+        steps = new RlEnv.Step[bufferSize];
         firstStepIndex = 0;
         stepsActualSize = 0;
     }
@@ -44,8 +43,8 @@ public class LruReplayBuffer implements ReplayBuffer {
     /** {@inheritDoc} */
     @Override
     @SuppressWarnings("PMD.AvoidArrayLoops")
-    public Step[] getBatch() {
-        Step[] batch = new Step[batchSize];
+    public RlEnv.Step[] getBatch() {
+        RlEnv.Step[] batch = new RlEnv.Step[batchSize];
         for (int i = 0; i < batchSize; i++) {
             int baseIndex = RandomUtils.nextInt(stepsActualSize);
             int index = Math.floorMod(firstStepIndex + baseIndex, steps.length);
@@ -56,7 +55,7 @@ public class LruReplayBuffer implements ReplayBuffer {
 
     /** {@inheritDoc} */
     @Override
-    public void addStep(Step step) {
+    public void addStep(RlEnv.Step step) {
         if (stepsActualSize == steps.length) {
             int stepToReplace = Math.floorMod(firstStepIndex - 1, steps.length);
             steps[stepToReplace].close();

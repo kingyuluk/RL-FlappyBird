@@ -11,9 +11,5 @@
  * and limitations under the License.
  */
 
-/**
- * Contains environments to train reinforcement learning in.
- *
- * <p>It has a base interface {@link ai.djl.modality.rl.env.RlEnv} as well as class implementing it.
- */
-package org.bird.rl.env;
+/** Contains utility classes for reinforcement learning. */
+package org.kingyu.rlflappybird.rl;

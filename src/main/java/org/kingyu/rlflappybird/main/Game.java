@@ -1,16 +1,17 @@
-package org.bird.main;
+package org.kingyu.rlflappybird.main;
 
 import ai.djl.modality.cv.util.NDImageUtils;
-import org.bird.rl.ActionSpace;
-import org.bird.rl.LruReplayBuffer;
-import org.bird.rl.ReplayBuffer;
-import org.bird.rl.agent.RlAgent;
-import org.bird.rl.env.RlEnv;
+import ai.djl.training.Trainer;
+import org.kingyu.rlflappybird.rl.ActionSpace;
+import org.kingyu.rlflappybird.rl.LruReplayBuffer;
+import org.kingyu.rlflappybird.rl.ReplayBuffer;
+import org.kingyu.rlflappybird.rl.agent.RlAgent;
+import org.kingyu.rlflappybird.rl.env.RlEnv;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDArrays;
 import ai.djl.ndarray.NDList;
 import ai.djl.ndarray.NDManager;
-import org.bird.util.GameUtil;
+import org.kingyu.rlflappybird.util.GameUtil;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -21,9 +22,9 @@ import java.awt.image.BufferedImage;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import static org.bird.ai.DQN.EXPLORE;
-import static org.bird.ai.DQN.OBSERVE;
-import static org.bird.util.Constant.*;
+import static org.kingyu.rlflappybird.ai.DQN.EXPLORE;
+import static org.kingyu.rlflappybird.ai.DQN.OBSERVE;
+import static org.kingyu.rlflappybird.util.Constant.*;
 
 /**
  * 主窗口类，游戏窗口和绘制的相关内容
@@ -31,15 +32,15 @@ import static org.bird.util.Constant.*;
  * @author Kingyu
  */
 
-public class GameFrame extends Frame implements Runnable, RlEnv {
+public class Game extends Frame implements Runnable, RlEnv {
     private static final long serialVersionUID = 1L; // 保持版本的兼容性
 
-    NDManager subManager = NDManager.newBaseManager();
+    private final NDManager subManager = NDManager.newBaseManager();
 
     private static int gameMode;
     public static final int NORMAL_MODE = 0;
-    public static final int TRAIN_MODE = 1;
-    public static final int TEST_MODE = 2;
+    public static final int NOUI_MODE = 1;
+    public static final int UI_MODE = 2;
 
     private static int gameState; // 游戏状态
     public static final int GAME_READY = 0; // 游戏未开始
@@ -60,42 +61,42 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
      */
     private NDList action;  // for Normal Mode
     private final NDManager manager;
-    private State state;
     private ReplayBuffer replayBuffer;
+    private State currentState;
 
     /**
-     * Constructs a {@link GameFrame} with a basic {@link LruReplayBuffer}.
+     * Constructs a {@link Game} with a basic {@link LruReplayBuffer}.
      *
      * @param manager          the manager for creating the game in
      * @param batchSize        the number of steps to train on per batch
      * @param replayBufferSize the number of steps to hold in the buffer
      */
-    public GameFrame(NDManager manager, int batchSize, int replayBufferSize, int gameMode) {
+    public Game(NDManager manager, int batchSize, int replayBufferSize, int gameMode) {
         this(manager, new LruReplayBuffer(batchSize, replayBufferSize));
         setGameMode(gameMode);
-        if (gameMode != TRAIN_MODE) {
+        if (gameMode != NOUI_MODE) {
             initFrame(); // 初始化游戏窗口
+            setVisible(true);
         }
-        setVisible(true);
         initGame(); // 初始化游戏
         setGameState(GAME_START);
     }
 
     /**
-     * Constructs a {@link GameFrame}.
+     * Constructs a {@link Game}.
      *
      * @param manager      the manager for creating the game in
      * @param replayBuffer the replay buffer for storing data
      */
-    public GameFrame(NDManager manager, ReplayBuffer replayBuffer) {
+    public Game(NDManager manager, ReplayBuffer replayBuffer) {
         this.manager = manager;
         this.replayBuffer = replayBuffer;
-        this.state = new State(bufImg, initObservation(bufImg), currentReward, currentTerminal);
+        this.currentState = new State(bufImg, initObservation(bufImg), currentReward, currentTerminal);
     }
 
 
-    public GameFrame() { // Normal Mode
-        state = new State(bufImg, initObservation(bufImg), currentReward, currentTerminal);
+    public Game() { // Normal Mode
+        currentState = new State(bufImg, initObservation(bufImg), currentReward, currentTerminal);
         gameMode = NORMAL_MODE;
         manager = NDManager.newBaseManager();
         action = new NDList(manager.create(DO_NOTHING));
@@ -107,18 +108,38 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
     public static int timeStep = 0;
     private static boolean currentTerminal;
     private static float currentReward = 0.1f;
-    boolean preImgSet = false;
+    private boolean preImgSet = false;
+    private Step[] batchSteps;
+    RlAgent agent;
+    Trainer trainer;
+    private State postState;
 
-    public void runEnv(RlAgent agent, boolean training) {
+    public void runEnv(RlAgent agent, Trainer trainer, boolean training) throws CloneNotSupportedException {
+        this.agent = agent;
+        this.trainer = trainer;
         // run the game
-        NDList action = agent.chooseAction(this, training);
-        Step step = step(action, training);
-
-        System.out.println("TIMESTEP " + timeStep +
-                " / " + getBirdMode() +
-                " / " + "ACTION " + (action.singletonOrThrow().getInt(0)) +
-                " / " + "REWARD " + step.getReward().getFloat() +
-                " / " + "SCORE " + getScore());
+        while (true) {
+            NDList action = agent.chooseAction(this, training);
+            Step step = step(action, training);
+            batchSteps = this.getBatch();
+            if (Game.timeStep > OBSERVE) {
+                agent.trainBatch(batchSteps);
+                trainer.step();
+            }
+            if (timeStep <= OBSERVE)
+                birdMode = "observe";
+            else if (timeStep <= OBSERVE + EXPLORE)
+                birdMode = "explore";
+            else
+                birdMode = "train";
+            System.out.println("TIMESTEP " + timeStep +
+                    " / " + getBirdMode() +
+                    " / " + "ACTION " + (action.singletonOrThrow().getInt(0)) +
+                    " / " + "REWARD " + step.getReward().getFloat() +
+                    " / " + "SCORE " + getScore());
+            this.currentState = postState.clone();
+            timeStep++;
+        }
     }
 
     /**
@@ -128,43 +149,32 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
      */
     @Override
     public Step step(NDList action, boolean training) {
-        switch (gameState) {
-            case GAME_READY: // Only effective in normal mode
-                if (action.singletonOrThrow().getInt(1) == 1) {
-                    bird.birdFlap();
-                    setGameState(GAME_START); // ame start
-                }
-                break;
-            case GAME_START:
-                if (action.singletonOrThrow().getInt(1) == 1) {
-                    bird.birdFlap();
-                }
-                break;
-            case GAME_OVER:
-                if (gameMode != NORMAL_MODE) {
-                    state.reward = -1f;
-                    state.terminal = true;
-                    resetGame();
-                } else if (action.singletonOrThrow().getInt(1) == 1) {
-                    resetGame();
-                }
-                break;
+        currentReward = 0.1f;
+        currentTerminal = false;
+
+        // actions[0] == 1: do nothing
+        // actions[1] == 1: flap the bird
+        if (action.singletonOrThrow().getInt(1) == 1) {
+            bird.birdFlap();
         }
-        repaint();
-        try {
-            Thread.sleep(FPS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        stepFrame();
+        if (gameMode != NOUI_MODE) {
+            repaint();
+            try {
+                Thread.sleep(FPS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
         State preState = new State(preBufImg, initObservation(bufImg), currentReward, currentTerminal);
         preImgSet = true;
-        state = preState;
-
-        State postState = new State(bufImg, setObservation(bufImg), currentReward, currentTerminal);
-        currentReward = 0.1f;  // reset reward
+        postState = new State(bufImg, getObservation(bufImg), currentReward, currentTerminal);
 
         FlappyBirdStep step = new FlappyBirdStep(subManager, preState, postState, action);
+        if (gameState == GAME_OVER) {
+            resetGame();
+        }
         if (training) {
             replayBuffer.addStep(step);
         }
@@ -176,7 +186,7 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
      */
     @Override
     public NDList getObservation() {
-        return state.getObservation();
+        return currentState.getObservation();
     }
 
     /**
@@ -184,7 +194,7 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
      */
     @Override
     public ActionSpace getActionSpace() {
-        return state.getActionSpace(manager);
+        return currentState.getActionSpace(manager);
     }
 
     /**
@@ -213,25 +223,17 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
     Queue<NDArray> imgQueue = new LinkedList<>();
 
     public NDList initObservation(BufferedImage img) {
-        // if queue is empty, init observation队为空则初始化，否则将队里的图片存入NDList作为preObservation
+        // if queue is empty, init observation
         NDArray observation = NDImageUtils.toTensor(GameUtil.imgPreprocess(img));
         if (imgQueue.size() == 0) {
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 4; i++) {
                 imgQueue.offer(observation);
-            return new NDList(NDArrays.stack(new NDList(observation, observation, observation, observation), 1));
-        }
-        // else save the img the queue to the NDList as preObservation
-        else {
-            NDArray[] buf = new NDArray[4];
-            int i = 0;
-            for (NDArray nd : imgQueue) {
-                buf[i++] = nd;
             }
-            return new NDList(NDArrays.stack(new NDList(buf[0], buf[1], buf[2], buf[3]), 1));
         }
+        return new NDList(NDArrays.stack(new NDList(observation, observation, observation, observation), 1));
     }
 
-    public NDList setObservation(BufferedImage postImg) {
+    public NDList getObservation(BufferedImage postImg) {
         // 获取连续帧（4）图片：复制当前帧图片 -> 堆积成4帧图片 -> 将获取到得下一帧图片替换当前第4帧，保证当前的batch图片是连续的。
         NDArray postObservation = NDImageUtils.toTensor(GameUtil.imgPreprocess(postImg));
         imgQueue.remove();
@@ -314,9 +316,9 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
         }
     }
 
-    private static final class State {
+    private static final class State implements Cloneable {
         private final NDList observation;
-        private final BufferedImage observationImg;
+        private BufferedImage observationImg; // use to debug
         private float reward;
         private boolean terminal;
 
@@ -331,9 +333,6 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
             return this.observation;
         }
 
-        /**
-         * {@inheritDoc}
-         */
         private ActionSpace getActionSpace(NDManager manager) {
             ActionSpace actionSpace = new ActionSpace();
             actionSpace.add(new NDList(manager.create(DO_NOTHING)));
@@ -347,6 +346,11 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
 
         private boolean isTerminal() {
             return terminal;
+        }
+
+        @Override
+        public State clone() throws CloneNotSupportedException {
+            return (State) super.clone();
         }
     }
 
@@ -411,53 +415,40 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
     private final BufferedImage bufImg = new BufferedImage(FRAME_WIDTH, FRAME_HEIGHT, BufferedImage.TYPE_4BYTE_ABGR);
     private final BufferedImage preBufImg = new BufferedImage(FRAME_WIDTH, FRAME_HEIGHT, BufferedImage.TYPE_4BYTE_ABGR);
 
-    public void update(Graphics g) {
+    public void stepFrame() {
         Graphics bufG = bufImg.getGraphics();
         if (preImgSet) {
             Graphics postG = preBufImg.getGraphics();
             postG.drawImage(bufImg, 0, 0, null);
             postG.dispose();
+            preImgSet = false;
         }
         background.draw(bufG, bird);
-//        if (gameMode == NORMAL_MODE && gameState == GAME_READY) {
-//            welcomeAnimation.draw(bufG);
-//        } else {
-//            gameElement.draw(bufG, bird);
-//        }
         bird.draw(bufG);
         gameElement.draw(bufG, bird);
-//        if (gameMode == NORMAL_MODE && bird.isDead()) {
-//            gameoverAnimation.draw(bufG, bird);
-//        }
+    }
 
-//        if (gameMode == NORMAL_MODE) {
-//            step(action, isTraining());
-//            action = new NDList(manager.create(DO_NOTHING));
-//        }
-        if (gameMode != TRAIN_MODE) {
+    public void update(Graphics g) {
+        if (gameMode != NOUI_MODE) {
             g.drawImage(bufImg, 0, 0, null); // 将图片绘制到屏幕
         }
         birdFlapped = false;
-
-        if (timeStep <= OBSERVE)
-            birdMode = "observe";
-        else if (timeStep <= OBSERVE + EXPLORE)
-            birdMode = "explore";
-        else
-            birdMode = "train";
-        timeStep++;
     }
 
     @Override
     public void run() {
-//        while (true) {
-//            repaint(); // 通过调用repaint(),让JVM调用update()
-//            try {
-//                Thread.sleep(GAME_INTERVAL); // FPS : 30
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        }
+        while (true) {
+            try {
+                Thread.sleep(0);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (timeStep > OBSERVE) {
+                System.out.println("start train");
+                this.agent.trainBatch(batchSteps);
+                this.trainer.step();
+            }
+        }
     }
 
     /**
@@ -467,12 +458,10 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
         setGameState(GAME_START);
         gameElement.reset();
         bird.reset();
-        setCurrentReward(0.1f);
-        setCurrentTerminal(false);
     }
 
     public static void setGameState(int gameState) {
-        GameFrame.gameState = gameState;
+        Game.gameState = gameState;
     }
 
     public static int getTimeStep() {
@@ -480,7 +469,7 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
     }
 
     public static void setGameMode(int gameMode) {
-        GameFrame.gameMode = gameMode;
+        Game.gameMode = gameMode;
     }
 
     public static int getGameMode() {
@@ -496,11 +485,11 @@ public class GameFrame extends Frame implements Runnable, RlEnv {
     }
 
     public static void setCurrentTerminal(boolean currentTerminal) {
-        GameFrame.currentTerminal = currentTerminal;
+        Game.currentTerminal = currentTerminal;
     }
 
     public static void setCurrentReward(float currentReward) {
-        GameFrame.currentReward = currentReward;
+        Game.currentReward = currentReward;
     }
 
     public long getScore() {

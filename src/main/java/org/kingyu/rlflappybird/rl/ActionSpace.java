@@ -10,29 +10,24 @@
  * OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package org.bird.rl;
+package org.kingyu.rlflappybird.rl;
 
-import org.bird.rl.env.RlEnv.Step;
+import ai.djl.ndarray.NDList;
+import ai.djl.util.RandomUtils;
 
-/**
- * Records {@link Step}s so that they can be trained on.
- *
- * <p>Using a replay buffer ensures that a variety of states are trained on for every training batch
- * making the training more stable.
- */
-public interface ReplayBuffer {
+import java.util.ArrayList;
 
-    /**
-     * Returns a batch of steps from this buffer.
-     *
-     * @return a batch of steps from this buffer
-     */
-    Step[] getBatch();
+/** Contains the available actions that can be taken in an {@link ai.djl.modality.rl.env.RlEnv}. */
+public class ActionSpace extends ArrayList<NDList> {
+
+    private static final long serialVersionUID = 8683452581122892189L;
 
     /**
-     * Adds a new step to the buffer.
+     * Returns a random action.
      *
-     * @param step the step to add
+     * @return a random action
      */
-    void addStep(Step step);
+    public NDList randomAction() {
+        return get(RandomUtils.nextInt(size()));
+    }
 }

@@ -10,10 +10,9 @@
  * OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package org.bird.rl.agent;
+package org.kingyu.rlflappybird.rl.agent;
 
-import org.bird.rl.env.RlEnv;
-import org.bird.rl.env.RlEnv.Step;
+import org.kingyu.rlflappybird.rl.env.RlEnv;
 import ai.djl.ndarray.NDList;
 
 /**
@@ -31,9 +30,9 @@ public interface RlAgent {
     NDList chooseAction(RlEnv env, boolean training);
 
     /**
-     * Trains this {@link ai.djl.modality.rl.agent.RlAgent} on a batch of {@link Step}s.
+     * Trains this {@link ai.djl.modality.rl.agent.RlAgent} on a batch of {@link RlEnv.Step}s.
      *
      * @param batchSteps the steps to train on
      */
-    void trainBatch(Step[] batchSteps);
+    void trainBatch(RlEnv.Step[] batchSteps);
 }

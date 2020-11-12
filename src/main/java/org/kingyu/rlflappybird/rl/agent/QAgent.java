@@ -10,11 +10,11 @@
  * OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package org.bird.rl.agent;
+package org.kingyu.rlflappybird.rl.agent;
 
-import org.bird.rl.ActionSpace;
-import org.bird.rl.env.RlEnv;
-import org.bird.rl.env.RlEnv.Step;
+import org.kingyu.rlflappybird.rl.ActionSpace;
+import org.kingyu.rlflappybird.rl.env.RlEnv;
+import org.kingyu.rlflappybird.rl.env.RlEnv.Step;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
 import ai.djl.training.GradientCollector;
@@ -23,7 +23,6 @@ import ai.djl.training.listener.TrainingListener.BatchData;
 import ai.djl.translate.Batchifier;
 
 
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -76,12 +75,8 @@ public class QAgent implements RlAgent {
     @Override
     public NDList chooseAction(RlEnv env, boolean training) {
         ActionSpace actionSpace = env.getActionSpace();
-//        NDList[] inputs = buildInputs(env.getObservation(), actionSpace);
-//        NDArray actionScores =
-//                trainer.evaluate(batchifier.batchify(inputs)).singletonOrThrow().squeeze(-1);
-        NDArray actionScores = trainer.evaluate(env.getObservation()).singletonOrThrow().get(0);
-        int bestAction = Math.toIntExact(actionScores.argMax().getLong());
-//        System.out.print("Q_MAX " + actionScores.max().getFloat());
+        NDArray actionReward = trainer.evaluate(env.getObservation()).singletonOrThrow().get(0);
+        int bestAction = Math.toIntExact(actionReward.argMax().getLong());
         return actionSpace.get(bestAction);
     }
 
@@ -118,11 +113,8 @@ public class QAgent implements RlAgent {
                 NDList postQ;
                 if (step.isDone()) {
                     postQ = new NDList(step.getReward());
-//                    postQ = new NDList(manager.create(new float[]{-1 * step.getReward().getFloat(), step.getReward().getFloat()}));
                 } else {
                     postQ = new NDList(results.max().mul(rewardDiscount).add(step.getReward()));
-//                    NDArray predictionQ = bestAction.mul(rewardDiscount).add(step.getReward());
-//                    postQ = new NDList(manager.create(new float[]{-1 * predictionQ.getFloat(), predictionQ.getFloat()}));
                 }
 
                 NDArray lossValue = trainer.getLoss().evaluate(postQ, preQ);
@@ -141,14 +133,5 @@ public class QAgent implements RlAgent {
         }
 //        trainer.notifyListeners(listener -> listener.onTrainingBatch(trainer, batchData));
 
-    }
-
-    private NDList[] buildInputs(NDList observation, List<NDList> actions) {
-        NDList[] inputs = new NDList[actions.size()];
-        for (int i = 0; i < actions.size(); i++) {
-            NDList nextData = new NDList().addAll(observation);
-            inputs[i] = nextData;
-        }
-        return inputs;
     }
 }

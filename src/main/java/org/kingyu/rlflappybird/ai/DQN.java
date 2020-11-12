@@ -1,12 +1,11 @@
-package org.bird.ai;
+package org.kingyu.rlflappybird.ai;
 
 import ai.djl.Model;
 import ai.djl.training.evaluator.Accuracy;
 import ai.djl.training.optimizer.Adam;
-import org.bird.rl.agent.EpsilonGreedy;
-import org.bird.rl.agent.QAgent;
-import org.bird.rl.agent.RlAgent;
-import org.bird.rl.env.RlEnv;
+import org.kingyu.rlflappybird.rl.agent.EpsilonGreedy;
+import org.kingyu.rlflappybird.rl.agent.QAgent;
+import org.kingyu.rlflappybird.rl.agent.RlAgent;
 import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.nn.Activation;
@@ -19,12 +18,10 @@ import ai.djl.training.DefaultTrainingConfig;
 import ai.djl.training.Trainer;
 import ai.djl.training.listener.TrainingListener;
 import ai.djl.training.loss.Loss;
-import ai.djl.training.optimizer.Optimizer;
 import ai.djl.training.tracker.LinearTracker;
 import ai.djl.training.tracker.Tracker;
-import org.apache.commons.cli.ParseException;
-import org.bird.main.GameFrame;
-import org.bird.util.Arguments;
+import org.kingyu.rlflappybird.main.Game;
+import org.kingyu.rlflappybird.util.Arguments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +29,7 @@ public class DQN {
     private static final Logger logger = LoggerFactory.getLogger(DQN.class);
 
     public final static int OBSERVE = 10000; // timeSteps to observe before training
-    public final static int EXPLORE = 100000; // frames over which to anneal epsilon
+    public final static int EXPLORE = 3000000; // frames over which to anneal epsilon
 
     private DQN() {
     }
@@ -44,14 +41,14 @@ public class DQN {
     public static void train(String[] args) {
         Arguments arguments = Arguments.parseArgs(args);
 
-        int gameMode = 2;  // 1:train mode   2:test mode
+        int gameMode = 1;  // 1:no ui   2:ui
         int batchSize = 32;  // size of mini batch
         int replayBufferSize = 50000; // number of previous transitions to remember;
         float rewardDiscount = 0.99f;  // decay rate of past observations
         float INITIAL_EPSILON = 0.1f;
         float FINAL_EPSILON = 0.0001f;
 
-        GameFrame game = new GameFrame(NDManager.newBaseManager(), batchSize, replayBufferSize, gameMode);
+        Game game = new Game(NDManager.newBaseManager(), batchSize, replayBufferSize, gameMode);
 
         SequentialBlock block = getBlock();
 
@@ -73,16 +70,7 @@ public class DQN {
                                 .build();
                 agent = new EpsilonGreedy(agent, exploreRate);
 
-                while (true) {
-                    game.runEnv(agent, true);
-                    // obtain random miniBatch from replay memory
-                    RlEnv.Step[] batchSteps = game.getBatch();
-                    if (GameFrame.timeStep > OBSERVE) {
-                        agent.trainBatch(batchSteps);
-                        trainer.step();
-                    }
-                }
-//                    trainer.notifyListeners(listener -> listener.onEpoch(trainer));
+                game.runEnv(agent, trainer, true);
 
 //                // 输出神经网络的结构
 //                Shape currentShape = new Shape(1, 4, 80, 80);
@@ -92,7 +80,8 @@ public class DQN {
 //                    System.out.println(block.getChildren().get(i).getKey() + " layer output : " + currentShape);
 //                }
 
-
+            } catch (CloneNotSupportedException e) {
+                e.printStackTrace();
             }
         }
 
@@ -137,7 +126,7 @@ public class DQN {
 
     public static DefaultTrainingConfig setupTrainingConfig() {
         return new DefaultTrainingConfig(Loss.l2Loss())
-                .optOptimizer(Adam.builder().optLearningRateTracker(Tracker.fixed(0.0001f)).build())
+                .optOptimizer(Adam.builder().optLearningRateTracker(Tracker.fixed(1e-6f)).build())
                 .addEvaluator(new Accuracy())
                 .addTrainingListeners(TrainingListener.Defaults.basic());
     }

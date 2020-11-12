@@ -1,4 +1,4 @@
-package org.bird.util;
+package org.kingyu.rlflappybird.util;
 
 import ai.djl.modality.cv.Image;
 import ai.djl.modality.cv.ImageFactory;

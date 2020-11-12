@@ -17,4 +17,4 @@
  * <p>It has the main interface {@link ai.djl.modality.rl.agent.RlAgent} and various agents
  * implementing it.
  */
-package org.bird.rl.agent;
+package org.kingyu.rlflappybird.rl.agent;

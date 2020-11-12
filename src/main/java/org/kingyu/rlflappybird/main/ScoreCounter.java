@@ -1,4 +1,4 @@
-package org.bird.main;
+package org.kingyu.rlflappybird.main;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -6,7 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
-import org.bird.util.Constant;
+import org.kingyu.rlflappybird.util.Constant;
 //import org.bird.util.MusicUtil;
 
 /**
@@ -62,7 +62,7 @@ public class ScoreCounter {
     public void score(Bird bird) {
         if (!bird.isDead()) {
 //			MusicUtil.playScore();
-            GameFrame.setCurrentReward(1f);
+            Game.setCurrentReward(1f);
             score += 1;
         }
     }

@@ -1,15 +1,11 @@
-package org.bird.main;
+package org.kingyu.rlflappybird.main;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bird.util.Constant;
-import org.bird.util.GameUtil;
-
-import static org.bird.main.Bird.BIRD_WIDTH;
-import static org.bird.main.Pipe.PIPE_WIDTH;
-import static org.bird.util.Constant.GAME_SPEED;
+import org.kingyu.rlflappybird.util.Constant;
+import org.kingyu.rlflappybird.util.GameUtil;
 
 /**
  * 游戏元素层
@@ -48,10 +44,10 @@ public class GameElementLayer {
      * 添加水管的逻辑： 当容器中添加的最后一个元素完全显示到屏幕后，添加下一对； 水管成对地相对地出现，空隙高度为窗口高度的1/4；
      * 每对水管的间隔距离为屏幕高度的1/4； 水管的高度的取值范围为窗口的[1/8~5/8]
      */
-    public static final int VERTICAL_INTERVAL = Constant.FRAME_HEIGHT / 4;
+    public static final int VERTICAL_INTERVAL = Constant.FRAME_HEIGHT / 3;
     public static final int HORIZONTAL_INTERVAL = Constant.FRAME_HEIGHT >> 2;
-    public static final int MIN_HEIGHT = Constant.FRAME_HEIGHT >> 3;
-    public static final int MAX_HEIGHT = ((Constant.FRAME_HEIGHT) >> 3) * 5;
+    public static final int MIN_HEIGHT = Constant.FRAME_HEIGHT / 4;
+    public static final int MAX_HEIGHT = Constant.FRAME_HEIGHT / 5 * 2;
 
     private void pipeBornLogic(Bird bird) {
         if (bird.isDead()) {
@@ -75,11 +71,11 @@ public class GameElementLayer {
         } else {
             // 判断最后一对水管是否完全进入游戏窗口，若进入则添加水管
             Pipe lastPipe = pipes.get(pipes.size() - 1); // 获得容器中最后一个水管
-            int currentDistance = lastPipe.getX() - bird.getBirdX() + BIRD_WIDTH / 2; // 小鸟和最后一根水管的距离
-            final int SCORE_DISTANCE = PIPE_WIDTH * 2 + PIPE_WIDTH + HORIZONTAL_INTERVAL * 2; // 小于得分距离则得分
+            int currentDistance = lastPipe.getX() - bird.getBirdX() + Bird.BIRD_WIDTH / 2; // 小鸟和最后一根水管的距离
+            final int SCORE_DISTANCE = Pipe.PIPE_WIDTH * 2 + HORIZONTAL_INTERVAL; // 小于得分距离则得分
             if (pipes.size() >= PipePool.FULL_PIPE
-                    && currentDistance < SCORE_DISTANCE
-                    && currentDistance > SCORE_DISTANCE - GAME_SPEED) {
+                    && currentDistance <= SCORE_DISTANCE
+                    && currentDistance > SCORE_DISTANCE - Constant.GAME_SPEED) {
                 ScoreCounter.getInstance().score(bird);
             }
             if (lastPipe.isInFrame()) {
@@ -125,10 +121,9 @@ public class GameElementLayer {
         for (Pipe pipe : pipes) {
             // 判断碰撞矩形是否有交集
             if (pipe.getPipeRect().intersects(bird.getBirdRect())) {
-                GameFrame.setCurrentReward(-1f);
-                GameFrame.setCurrentTerminal(true);
-                GameFrame.setGameState(GameFrame.GAME_OVER);
-//                bird.deadBirdFall();
+                Game.setCurrentReward(-1f);
+                Game.setCurrentTerminal(true);
+                Game.setGameState(Game.GAME_OVER);
                 return;
             }
         }

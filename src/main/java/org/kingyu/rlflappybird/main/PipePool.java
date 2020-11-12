@@ -1,9 +1,9 @@
-package org.bird.main;
+package org.kingyu.rlflappybird.main;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bird.util.Constant;
+import org.kingyu.rlflappybird.util.Constant;
 
 /**
  * 为了避免反复地创建和销毁对象，使用对象池来提前创建好一些对象，使用时从对象池中获得，使用完后归还

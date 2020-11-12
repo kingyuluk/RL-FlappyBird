@@ -10,14 +10,12 @@
  * OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package org.bird.rl.env;
+package org.kingyu.rlflappybird.rl.env;
 
-import org.bird.rl.ActionSpace;
-import org.bird.rl.agent.RlAgent;
+import org.kingyu.rlflappybird.rl.ActionSpace;
+import org.kingyu.rlflappybird.rl.agent.RlAgent;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
-
-import java.awt.*;
 
 /**
  * An environment to use for reinforcement learning.
