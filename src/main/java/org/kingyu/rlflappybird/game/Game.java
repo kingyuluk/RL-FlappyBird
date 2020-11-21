@@ -1,6 +1,5 @@
-package org.kingyu.rlflappybird.main;
+package org.kingyu.rlflappybird.game;
 
-import ai.djl.modality.cv.util.NDImageUtils;
 import ai.djl.training.Trainer;
 import org.kingyu.rlflappybird.rl.ActionSpace;
 import org.kingyu.rlflappybird.rl.LruReplayBuffer;
@@ -19,11 +18,10 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
-import static org.kingyu.rlflappybird.ai.DQN.EXPLORE;
-import static org.kingyu.rlflappybird.ai.DQN.OBSERVE;
+import static org.kingyu.rlflappybird.ai.TrainBird.EXPLORE;
+import static org.kingyu.rlflappybird.ai.TrainBird.OBSERVE;
 import static org.kingyu.rlflappybird.util.Constant.*;
 
 /**
@@ -122,10 +120,10 @@ public class Game extends Frame implements Runnable, RlEnv {
             NDList action = agent.chooseAction(this, training);
             Step step = step(action, training);
             batchSteps = this.getBatch();
-            if (Game.timeStep > OBSERVE) {
-                agent.trainBatch(batchSteps);
-                trainer.step();
-            }
+//            if (Game.timeStep > OBSERVE) {
+//                agent.trainBatch(batchSteps);
+//                trainer.step();
+//            }
             if (timeStep <= OBSERVE)
                 birdMode = "observe";
             else if (timeStep <= OBSERVE + EXPLORE)
@@ -134,7 +132,7 @@ public class Game extends Frame implements Runnable, RlEnv {
                 birdMode = "train";
             System.out.println("TIMESTEP " + timeStep +
                     " / " + getBirdMode() +
-                    " / " + "ACTION " + (action.singletonOrThrow().getInt(0)) +
+                    " / " + "ACTION " + (Arrays.toString(action.singletonOrThrow().toArray())) +
                     " / " + "REWARD " + step.getReward().getFloat() +
                     " / " + "SCORE " + getScore());
             this.currentState = postState.clone();
@@ -220,11 +218,10 @@ public class Game extends Frame implements Runnable, RlEnv {
     public void reset() {
     }
 
-    Queue<NDArray> imgQueue = new LinkedList<>();
-
+    Queue<NDArray> imgQueue = new ArrayDeque<>(4);
     public NDList initObservation(BufferedImage img) {
         // if queue is empty, init observation
-        NDArray observation = NDImageUtils.toTensor(GameUtil.imgPreprocess(img));
+        NDArray observation = GameUtil.imgPreprocess(img);
         if (imgQueue.size() == 0) {
             for (int i = 0; i < 4; i++) {
                 imgQueue.offer(observation);
@@ -235,7 +232,7 @@ public class Game extends Frame implements Runnable, RlEnv {
 
     public NDList getObservation(BufferedImage postImg) {
         // 获取连续帧（4）图片：复制当前帧图片 -> 堆积成4帧图片 -> 将获取到得下一帧图片替换当前第4帧，保证当前的batch图片是连续的。
-        NDArray postObservation = NDImageUtils.toTensor(GameUtil.imgPreprocess(postImg));
+        NDArray postObservation = GameUtil.imgPreprocess(postImg);
         imgQueue.remove();
         imgQueue.offer(postObservation);
         NDArray[] buf = new NDArray[4];
@@ -317,10 +314,10 @@ public class Game extends Frame implements Runnable, RlEnv {
     }
 
     private static final class State implements Cloneable {
-        private final NDList observation;
+        private NDList observation;
         private BufferedImage observationImg; // use to debug
-        private float reward;
-        private boolean terminal;
+        private final float reward;
+        private final boolean terminal;
 
         private State(BufferedImage observationImg, NDList observation, float reward, boolean terminal) {
             this.observationImg = observationImg;
@@ -350,7 +347,9 @@ public class Game extends Frame implements Runnable, RlEnv {
 
         @Override
         public State clone() throws CloneNotSupportedException {
-            return (State) super.clone();
+            State cloned = (State) super.clone();
+            cloned.observation = (NDList) this.observation.clone();
+            return cloned;
         }
     }
 

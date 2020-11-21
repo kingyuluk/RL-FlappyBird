@@ -1,4 +1,4 @@
-package org.kingyu.rlflappybird.main;
+package org.kingyu.rlflappybird.game;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;

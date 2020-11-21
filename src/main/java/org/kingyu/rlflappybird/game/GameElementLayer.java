@@ -1,4 +1,4 @@
-package org.kingyu.rlflappybird.main;
+package org.kingyu.rlflappybird.game;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -73,6 +73,11 @@ public class GameElementLayer {
             Pipe lastPipe = pipes.get(pipes.size() - 1); // 获得容器中最后一个水管
             int currentDistance = lastPipe.getX() - bird.getBirdX() + Bird.BIRD_WIDTH / 2; // 小鸟和最后一根水管的距离
             final int SCORE_DISTANCE = Pipe.PIPE_WIDTH * 2 + HORIZONTAL_INTERVAL; // 小于得分距离则得分
+            if (pipes.size() >= PipePool.FULL_PIPE
+                    && currentDistance <= 275
+                    && currentDistance > 270) {
+                Game.setCurrentReward(0.5f);
+            }
             if (pipes.size() >= PipePool.FULL_PIPE
                     && currentDistance <= SCORE_DISTANCE
                     && currentDistance > SCORE_DISTANCE - Constant.GAME_SPEED) {
