@@ -24,7 +24,7 @@ The graphical interface can be opened in ai/DQN.java on Line 44.
 ## Package Contents
 * org.kingyu.rlflappybird.ai    
 
-* org.kingyu.rlflappybird.main
+* org.kingyu.rlflappybird.game
 
 * org.kingyu.rlflappybird.rl  
 

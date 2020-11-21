@@ -2,8 +2,10 @@ package org.kingyu.rlflappybird.util;
 
 import ai.djl.modality.cv.Image;
 import ai.djl.modality.cv.ImageFactory;
+import ai.djl.modality.cv.util.NDImageUtils;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDManager;
+import ai.djl.ndarray.types.DataType;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -78,6 +80,7 @@ public class GameUtil {
         FontRenderContext frc = new FontRenderContext(affinetransform, true, true);
         return (int) (font.getStringBounds(str, frc).getWidth());
     }
+
     public static int getStringHeight(Font font, String str) {
         AffineTransform affinetransform = new AffineTransform();
         FontRenderContext frc = new FontRenderContext(affinetransform, true, true);
@@ -92,30 +95,15 @@ public class GameUtil {
     }
 
     /**
-     * Resize image
-     *
-     * @param img input image
-     * @param width new width
-     * @param height new height
-     * @return image after resize
-     */
-    public static BufferedImage resize(BufferedImage img, int width, int height) {
-        BufferedImage new_img = new BufferedImage(width, height, img.getType());
-        Graphics2D g = new_img.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g.drawImage(img, 0, 0, width, height, 0, 0, img.getWidth(), img.getHeight(), null);
-        g.dispose();
-        return new_img;
-    }
-
-    /**
      * Image preprocess
      *
      * @param observation input BufferedImage
      * @return NDArray:Shape(80,80,1)
      */
     public static NDArray imgPreprocess(BufferedImage observation) {
-        observation = resize(observation, 80, 80);
-        return ImageFactory.getInstance().fromImage(observation).toNDArray(NDManager.newBaseManager(), Image.Flag.GRAYSCALE); // Shape(80,80,1)
+        return NDImageUtils.toTensor(
+                NDImageUtils.resize(
+                        ImageFactory.getInstance().fromImage(observation).toNDArray(NDManager.newBaseManager(), Image.Flag.GRAYSCALE)
+                        ,80,80));
     }
 }

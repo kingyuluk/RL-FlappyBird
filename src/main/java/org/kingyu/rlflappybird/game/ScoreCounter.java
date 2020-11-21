@@ -1,4 +1,4 @@
-package org.kingyu.rlflappybird.main;
+package org.kingyu.rlflappybird.game;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

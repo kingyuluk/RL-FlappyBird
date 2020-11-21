@@ -1,4 +1,4 @@
-package org.kingyu.rlflappybird.main;
+package org.kingyu.rlflappybird.game;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -94,7 +94,7 @@ public class Bird {
     }
 
     public static final int ACC_FLAP = 7; // players speed on flapping
-    public static final double ACC_Y = 1; // players downward acceleration
+    public static final double ACC_Y = 2; // players downward acceleration
     public static final int MAX_VEL_Y = 10; // max vel along Y, max descend speed
     public static final int BOTTOM_BOUNDARY = Constant.FRAME_HEIGHT - Constant.GROUND_HEIGHT - (birdImages.getHeight() >> 1);
     public static final int TOP_BOUNDARY = 30;
@@ -106,6 +106,14 @@ public class Bird {
         keyReleased();
         if (velocity < MAX_VEL_Y)
             velocity -= ACC_Y;
+        if(y < Constant.FRAME_HEIGHT / 5){
+            Game.setCurrentReward(-0.2f);
+        }
+        if(y <= TOP_BOUNDARY) {
+            Game.setCurrentReward(-1.5f);
+            Game.setCurrentTerminal(true);
+            Game.setGameState(Game.GAME_OVER);
+        }
         if(y > TOP_BOUNDARY) {
             y = Math.min((y - velocity), BOTTOM_BOUNDARY);
             birdRect.y = birdRect.y - velocity;

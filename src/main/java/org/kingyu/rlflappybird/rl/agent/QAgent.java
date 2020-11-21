@@ -108,19 +108,19 @@ public class QAgent implements RlAgent {
              * end for
              **/
             try (GradientCollector collector = trainer.newGradientCollector()) {
-                NDArray results = trainer.forward(step.getPostObservation()).singletonOrThrow();  // QValue_batch
-                NDList preQ = new NDList(results.mul(step.getAction().singletonOrThrow()).sum());
-                NDList postQ;
+                NDArray reward = trainer.forward(step.getPostObservation()).singletonOrThrow();
+                NDList Q = new NDList(reward.mul(step.getAction().singletonOrThrow()).sum());
+                NDList targetQ;
                 if (step.isDone()) {
-                    postQ = new NDList(step.getReward());
+                    targetQ = new NDList(step.getReward());
                 } else {
-                    postQ = new NDList(results.max().mul(rewardDiscount).add(step.getReward()));
+                    targetQ = new NDList(reward.max().mul(rewardDiscount).add(step.getReward()));
                 }
 
-                NDArray lossValue = trainer.getLoss().evaluate(postQ, preQ);
+                NDArray lossValue = trainer.getLoss().evaluate(targetQ, Q);
                 collector.backward(lossValue);
-                batchData.getLabels().put(postQ.get(0).getDevice(), postQ);
-                batchData.getPredictions().put(preQ.get(0).getDevice(), preQ);
+                batchData.getLabels().put(targetQ.get(0).getDevice(), targetQ);
+                batchData.getPredictions().put(Q.get(0).getDevice(), Q);
 
                 /**
                  * self.trainStep.run(feed_dict={

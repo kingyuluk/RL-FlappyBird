@@ -3,7 +3,7 @@ package org.kingyu.rlflappybird.util;
 import ai.djl.Device;
 
 import org.apache.commons.cli.*;
-import org.kingyu.rlflappybird.main.Game;
+import org.kingyu.rlflappybird.game.Game;
 
 public class Arguments {
 

@@ -20,22 +20,22 @@ import ai.djl.training.listener.TrainingListener;
 import ai.djl.training.loss.Loss;
 import ai.djl.training.tracker.LinearTracker;
 import ai.djl.training.tracker.Tracker;
-import org.kingyu.rlflappybird.main.Game;
+import org.kingyu.rlflappybird.game.Game;
 import org.kingyu.rlflappybird.util.Arguments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DQN {
-    private static final Logger logger = LoggerFactory.getLogger(DQN.class);
+public class TrainBird {
+    private static final Logger logger = LoggerFactory.getLogger(TrainBird.class);
 
-    public final static int OBSERVE = 10000; // timeSteps to observe before training
+    public final static int OBSERVE = 1000; // timeSteps to observe before training
     public final static int EXPLORE = 3000000; // frames over which to anneal epsilon
 
-    private DQN() {
+    private TrainBird() {
     }
 
     public static void main(String[] args) {
-        DQN.train(args);
+        TrainBird.train(args);
     }
 
     public static void train(String[] args) {

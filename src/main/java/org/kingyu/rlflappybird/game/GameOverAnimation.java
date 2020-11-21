@@ -1,4 +1,4 @@
-package org.kingyu.rlflappybird.main;
+package org.kingyu.rlflappybird.game;
 
 import org.kingyu.rlflappybird.util.Constant;
 import org.kingyu.rlflappybird.util.GameUtil;
