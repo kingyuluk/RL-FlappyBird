@@ -113,7 +113,6 @@ public class Game extends Frame implements Runnable, RlEnv {
             batchSteps = this.getBatch();
             if (Game.timeStep > OBSERVE) {
                 agent.trainBatch(batchSteps);
-                trainer.step();
             }
             if (timeStep <= OBSERVE)
                 trainState = "observe";
@@ -128,7 +127,7 @@ public class Game extends Frame implements Runnable, RlEnv {
                     " / " + "SCORE " + getScore());
             this.currentState = postState.clone();
             timeStep++;
-            if (timeStep % 200000 == 0) {
+            if (timeStep % 10000 == 0) {
                 return;
             }
         }
@@ -141,13 +140,32 @@ public class Game extends Frame implements Runnable, RlEnv {
      */
     @Override
     public Step step(NDList action, boolean training) {
-        currentReward = 0.1f;
+        currentReward = 2f;
         currentTerminal = false;
 
         // actions = [1,0]: do nothing
         // actions = [0,1]: flap the bird
         if (action.singletonOrThrow().getInt(1) == 1) {
             bird.birdFlap();
+        }
+        stepFrame();
+        if (gameMode != NOUI_MODE) {
+            repaint();
+            try {
+                Thread.sleep(FPS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        stepFrame();
+        if (gameMode != NOUI_MODE) {
+            repaint();
+            try {
+                Thread.sleep(FPS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         stepFrame();
         if (gameMode != NOUI_MODE) {
@@ -319,8 +337,8 @@ public class Game extends Frame implements Runnable, RlEnv {
 
         private ActionSpace getActionSpace(NDManager manager) {
             ActionSpace actionSpace = new ActionSpace();
-            actionSpace.add(new NDList(manager.create(FLAP)));
             actionSpace.add(new NDList(manager.create(DO_NOTHING)));
+            actionSpace.add(new NDList(manager.create(FLAP)));
             return actionSpace;
         }
 

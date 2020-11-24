@@ -59,7 +59,7 @@ public class ScoreCounter {
     public void score(Bird bird) {
         if (!bird.isDead()) {
 //			MusicUtil.playScore();
-            Game.setCurrentReward(1f);
+            Game.setCurrentReward(8f);
             score += 1;
         }
     }

@@ -32,7 +32,7 @@ import java.nio.file.Paths;
 public class TrainBird {
     private static final Logger logger = LoggerFactory.getLogger(TrainBird.class);
 
-    public final static int OBSERVE = 100; // timeSteps to observe before training
+    public final static int OBSERVE = 1000; // timeSteps to observe before training
     public final static int EXPLORE = 3000000; // frames over which to anneal epsilon
 
     private TrainBird() {
@@ -45,12 +45,12 @@ public class TrainBird {
     public static void train(String[] args) {
         Arguments arguments = Arguments.parseArgs(args);
 
-        int gameMode = 2;  // 1:no ui   2:ui
+        int gameMode = 1;  // 1:no ui   2:ui
         int batchSize = 32;  // size of mini batch
         int replayBufferSize = 50000; // number of previous transitions to remember;
         float rewardDiscount = 0.99f;  // decay rate of past observations
-        float INITIAL_EPSILON = 0.0001f;
-        float FINAL_EPSILON = 0.00001f;
+        float INITIAL_EPSILON = 0.001f;
+        float FINAL_EPSILON = 0.0001f;
         String modelParamsPath = "model";
 
         Game game = new Game(NDManager.newBaseManager(), batchSize, replayBufferSize, gameMode);
@@ -59,7 +59,7 @@ public class TrainBird {
 
         try (Model model = Model.newInstance("QNetwork")) {
             model.setBlock(block);
-            model.load(Paths.get(modelParamsPath), "dqn-200000");
+//            model.load(Paths.get(modelParamsPath), "dqn-200000");
 
             DefaultTrainingConfig config = setupTrainingConfig();
             try (Trainer trainer = model.newTrainer(config)) {
@@ -76,7 +76,7 @@ public class TrainBird {
                                 .build();
                 agent = new EpsilonGreedy(agent, exploreRate);
 
-                while(true) {
+                while (true) {
                     game.runEnv(agent, trainer, true);
                     model.save(Paths.get(modelParamsPath), "dqn-" + Game.getTimeStep());
                 }
@@ -91,11 +91,12 @@ public class TrainBird {
             } catch (CloneNotSupportedException | IOException e) {
                 e.printStackTrace();
             }
-        } catch (MalformedModelException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+//        } catch (MalformedModelException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
     }
 

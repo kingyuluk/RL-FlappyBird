@@ -124,7 +124,7 @@ public class Bird {
     }
 
     public void die(){
-        Game.setCurrentReward(-1f);
+        Game.setCurrentReward(-5f);
         Game.setCurrentTerminal(true);
         Game.setGameState(Game.GAME_OVER);
         state = BIRD_DEAD;
