@@ -91,7 +91,6 @@ public class QAgent implements RlAgent {
         BatchData batchData =
                 new BatchData(null, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
         for (Step step : batchSteps) {
-
             /** Initialize replay memory D to size N
              * Initialize action-value function Q with random weights
              * for episode = 1, M do

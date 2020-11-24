@@ -37,10 +37,10 @@ public class GameElementLayer {
         generatePipe(bird);
     }
 
-    public static final int VERTICAL_INTERVAL = Constant.FRAME_HEIGHT / 3;
+    public static final int VERTICAL_INTERVAL = Constant.FRAME_HEIGHT / 4;
     public static final int HORIZONTAL_INTERVAL = Constant.FRAME_HEIGHT >> 2;
     public static final int MIN_HEIGHT = Constant.FRAME_HEIGHT / 5;
-    public static final int MAX_HEIGHT = Constant.FRAME_HEIGHT / 4;
+    public static final int MAX_HEIGHT = Constant.FRAME_HEIGHT / 3;
 
     /**
      * 当容器中添加的最后一个水管完全显示到屏幕后，添加下一对；
@@ -69,9 +69,9 @@ public class GameElementLayer {
             int currentDistance = lastPipe.getX() - bird.getBirdX() + Bird.BIRD_WIDTH / 2; // 小鸟和最后一根水管的距离
             final int SCORE_DISTANCE = Pipe.PIPE_WIDTH * 2 + HORIZONTAL_INTERVAL; // 小于得分距离则得分
             if (pipes.size() >= PipePool.FULL_PIPE
-                    && currentDistance <= 275
-                    && currentDistance > 270) {
-                Game.setCurrentReward(0.5f);
+                    && currentDistance <= 265
+                    && currentDistance > 260) {
+                Game.setCurrentReward(6f);
             }
             if (pipes.size() >= PipePool.FULL_PIPE
                     && currentDistance <= SCORE_DISTANCE
