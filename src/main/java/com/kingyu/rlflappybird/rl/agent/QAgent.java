@@ -41,33 +41,18 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class QAgent implements RlAgent {
 
-    private Trainer trainer;
-    private float rewardDiscount;
-    private Batchifier batchifier;
-
-    /**
-     * Constructs a {@link ai.djl.modality.rl.agent.QAgent}.
-     *
-     * <p>It uses the {@link ai.djl.translate.StackBatchifier} as the default batchifier.
-     *
-     * @param trainer        the trainer for the model to learn
-     * @param rewardDiscount the reward discount to apply to rewards from future states
-     */
-    public QAgent(Trainer trainer, float rewardDiscount) {
-        this(trainer, rewardDiscount, Batchifier.STACK);
-    }
+    private final Trainer trainer;
+    private final float rewardDiscount;
 
     /**
      * Constructs a {@link ai.djl.modality.rl.agent.QAgent} with a custom {@link Batchifier}.
      *
      * @param trainer        the trainer for the model to learn
      * @param rewardDiscount the reward discount to apply to rewards from future states
-     * @param batchifier     the batchifier to join inputs with
      */
-    public QAgent(Trainer trainer, float rewardDiscount, Batchifier batchifier) {
+    public QAgent(Trainer trainer, float rewardDiscount) {
         this.trainer = trainer;
         this.rewardDiscount = rewardDiscount;
-        this.batchifier = batchifier;
     }
 
     /**
@@ -91,7 +76,7 @@ public class QAgent implements RlAgent {
         BatchData batchData =
                 new BatchData(null, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
         for (Step step : batchSteps) {
-            /** Initialize replay memory D to size N
+            /* Initialize replay memory D to size N
              * Initialize action-value function Q with random weights
              * for episode = 1, M do
              *     Initialize state s_1
@@ -128,7 +113,7 @@ public class QAgent implements RlAgent {
                 batchData.getPredictions().put(Q.get(0).getDevice(), Q);
                 this.trainer.step();
 
-                /**
+                /*
                  * self.trainStep.run(feed_dict={
                  *        self.yInput : y_batch,
                  *        self.actionInput : action_batch,

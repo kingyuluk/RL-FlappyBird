@@ -19,7 +19,7 @@ Importing the project into the IDEA, then run DQN.java directly.
 
 The default mode is without graphics.
 
-The graphical interface can be opened in ai/DQN.java on Line 44.
+The graphical interface can be opened in ai/TrainBird.java on Line 54.
 
 ## Package Contents
 * org.kingyu.rlflappybird.ai    

@@ -44,7 +44,6 @@ public class ScoreCounter {
     }
 
     public void saveScore() {
-        long score = getCurrentScore();
         bestScore = Math.max(bestScore, getCurrentScore());
         try {
             File file = new File(Constant.SCORE_FILE_PATH);
@@ -59,7 +58,7 @@ public class ScoreCounter {
     public void score(Bird bird) {
         if (!bird.isDead()) {
 //			MusicUtil.playScore();
-            Game.setCurrentReward(8f);
+            Game.setCurrentReward(1.2f);
             score += 1;
         }
     }

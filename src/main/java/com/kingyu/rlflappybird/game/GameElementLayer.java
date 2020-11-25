@@ -71,7 +71,7 @@ public class GameElementLayer {
             if (pipes.size() >= PipePool.FULL_PIPE
                     && currentDistance <= 265
                     && currentDistance > 260) {
-                Game.setCurrentReward(6f);
+                Game.setCurrentReward(1f);
             }
             if (pipes.size() >= PipePool.FULL_PIPE
                     && currentDistance <= SCORE_DISTANCE

@@ -48,7 +48,7 @@ public interface RlEnv extends AutoCloseable {
      * @param training true if the step is during training
      * @return the {@link Step} with the result of the action
      */
-    Step step(NDList action, boolean training);
+    void step(NDList action, boolean training);
 
     /**
      * Runs the environment from reset until done.
@@ -65,13 +65,13 @@ public interface RlEnv extends AutoCloseable {
         // run the game
         while (true) {
             NDList action = agent.chooseAction(this, training);
-            Step step = step(action, training);
+            step(action, training);
 
 //            return step.getReward().getFloat();
-            totalReward += step.getReward().getFloat();
-            if (step.isDone()) {
-                return totalReward;
-            }
+//            totalReward += step.getReward().getFloat();
+//            if (step.isDone()) {
+//                return totalReward;
+//            }
         }
     }
 
