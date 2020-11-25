@@ -21,9 +21,8 @@ import com.kingyu.rlflappybird.rl.env.RlEnv;
  */
 public class LruReplayBuffer implements ReplayBuffer {
 
-    private int batchSize;
-
-    private RlEnv.Step[] steps;
+    private final int batchSize;
+    private final RlEnv.Step[] steps;
     private int firstStepIndex;
     private int stepsActualSize;
 

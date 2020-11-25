@@ -1,6 +1,5 @@
 package com.kingyu.rlflappybird.game;
 
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
@@ -16,8 +15,6 @@ import com.kingyu.rlflappybird.util.GameUtil;
  * @author Kingyu
  */
 public class Bird {
-    public static final int IMG_COUNT = 1; // 图片数量
-    public static final int FLY_STATE = 4; // 飞行形态数量
     private final int x;
     private int y;
 
@@ -90,9 +87,9 @@ public class Bird {
         return keyRelease;
     }
 
-    public static final int ACC_FLAP = 7; // players speed on flapping
-    public static final double ACC_Y = 2; // players downward acceleration
-    public static final int MAX_VEL_Y = 10; // max vel along Y, max descend speed
+    public static final int ACC_FLAP = 15; // players speed on flapping
+    public static final double ACC_Y = 4; // players downward acceleration
+    public static final int MAX_VEL_Y = 16; // max vel along Y, max descend speed
     public static final int BOTTOM_BOUNDARY = Constant.FRAME_HEIGHT - GameBackground.GROUND_HEIGHT - (birdImages.getHeight() >> 1);
     public static final int TOP_BOUNDARY = 30;
 
@@ -106,6 +103,9 @@ public class Bird {
         if(y > TOP_BOUNDARY) {
             y = Math.min((y - velocity), BOTTOM_BOUNDARY);
             birdRect.y = birdRect.y - velocity;
+        }
+        if(birdRect.y < GameElementLayer.MIN_HEIGHT){
+            Game.setCurrentReward(-0.5f);
         }
         if (birdRect.y >= BOTTOM_BOUNDARY - 10) {
 //                    MusicUtil.playCrash();
@@ -124,7 +124,7 @@ public class Bird {
     }
 
     public void die(){
-        Game.setCurrentReward(-5f);
+        Game.setCurrentReward(-1f);
         Game.setCurrentTerminal(true);
         Game.setGameState(Game.GAME_OVER);
         state = BIRD_DEAD;
@@ -135,14 +135,14 @@ public class Bird {
         return state == BIRD_FALL || state == BIRD_DEAD;
     }
 
-    // 绘制实时分数
-    private void drawScore(Graphics g) {
-        g.setColor(Color.white);
-        g.setFont(Constant.CURRENT_SCORE_FONT);
-        String str = Long.toString(counter.getCurrentScore());
-        int x = Constant.FRAME_WIDTH - GameUtil.getStringWidth(Constant.CURRENT_SCORE_FONT, str) >> 1;
-        g.drawString(str, x, Constant.FRAME_HEIGHT / 10);
-    }
+//    // 绘制实时分数
+//    private void drawScore(Graphics g) {
+//        g.setColor(Color.white);
+//        g.setFont(Constant.CURRENT_SCORE_FONT);
+//        String str = Long.toString(counter.getCurrentScore());
+//        int x = Constant.FRAME_WIDTH - GameUtil.getStringWidth(Constant.CURRENT_SCORE_FONT, str) >> 1;
+//        g.drawString(str, x, Constant.FRAME_HEIGHT / 10);
+//    }
 
     // 重置小鸟
     public void reset() {
