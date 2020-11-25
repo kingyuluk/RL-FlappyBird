@@ -1,6 +1,5 @@
 package com.kingyu.rlflappybird.game;
 
-import com.kingyu.rlflappybird.ai.TrainBird;
 import com.kingyu.rlflappybird.rl.ActionSpace;
 import com.kingyu.rlflappybird.rl.LruReplayBuffer;
 import com.kingyu.rlflappybird.rl.ReplayBuffer;
@@ -18,6 +17,7 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.util.*;
 
+import static com.kingyu.rlflappybird.ai.TrainBird.OBSERVE;
 import static com.kingyu.rlflappybird.util.Constant.*;
 
 /**
@@ -88,28 +88,6 @@ public class Game extends Frame implements RlEnv {
     private static float currentReward = 0.1f;
     private String trainState = "observe";
 
-
-//    class TrainImplements implements Runnable {
-//        private final RlAgent agent;
-//        public TrainImplements(RlAgent agent) {
-//            this.agent = agent;
-//        }
-//        public void run() {
-//            while (true) {
-//                try {
-//                    Thread.sleep(0);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//                if (timeStep > TrainBird.OBSERVE) {
-//                    System.out.println("*****start training*****");
-//                    this.agent.trainBatch(batchSteps);
-//                    trainStep++;
-//                }
-//            }
-//        }
-//    }
-
     public Step[] runEnv(RlAgent agent, boolean training) throws CloneNotSupportedException {
         /*
          * input_actions[0] == 1: do nothing
@@ -124,7 +102,11 @@ public class Game extends Frame implements RlEnv {
         NDList action = agent.chooseAction(this, training);
         step(action, training);
         Step[] batchSteps = this.getBatch();
-        if (timeStep <= TrainBird.OBSERVE) {
+//        if(timeStep > OBSERVE) {
+//            agent.trainBatch(batchSteps);
+//            trainStep++;
+//        }
+        if (timeStep <= OBSERVE) {
             trainState = "observe";
         } else {
             trainState = "explore";
@@ -142,10 +124,8 @@ public class Game extends Frame implements RlEnv {
 //    int FRAME_PER_ACTION = 1;
     @Override
     public void step(NDList action, boolean training) {
-//        action = new NDList(manager.create(FLAP));
-        currentReward = 0.1f;
+        currentReward = 0.2f;
         currentTerminal = false;
-//         动作接收间隔
 //        if (timeStep % FRAME_PER_ACTION == 0 && action.singletonOrThrow().getInt(1) == 1) {
         if (action.singletonOrThrow().getInt(1) == 1) {
             bird.birdFlap();
@@ -427,4 +407,25 @@ public class Game extends Frame implements RlEnv {
     public long getScore() {
         return bird.getCurrentScore();
     }
+
+    //    class TrainImplements implements Runnable {
+//        private final RlAgent agent;
+//        public TrainImplements(RlAgent agent) {
+//            this.agent = agent;
+//        }
+//        public void run() {
+//            while (true) {
+//                try {
+//                    Thread.sleep(0);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//                if (timeStep > TrainBird.OBSERVE) {
+//                    System.out.println("*****start training*****");
+//                    this.agent.trainBatch(batchSteps);
+//                    trainStep++;
+//                }
+//            }
+//        }
+//    }
 }

@@ -39,7 +39,7 @@ public class TrainBird {
 
     public final static int OBSERVE = 1000; // timeSteps to observe before training
     public final static int EXPLORE = 3000000; // frames over which to anneal epsilon
-    static RlEnv.Step[] trainBatch;
+    static RlEnv.Step[] batchSteps;
 
     private TrainBird() {
     }
@@ -51,10 +51,10 @@ public class TrainBird {
     public static void train(String[] args) {
         Arguments arguments = Arguments.parseArgs(args);
 
-        int gameMode = 1;  // 1:no ui   2:ui
+        int gameMode = 2;  // 1:no ui   2:ui
         int batchSize = 32;  // size of mini batch
         int replayBufferSize = 50000; // number of previous transitions to remember;
-        float rewardDiscount = 0.99f;  // decay rate of past observations
+        float rewardDiscount = 0.9f;  // decay rate of past observations
         float INITIAL_EPSILON = 0.1f;
         float FINAL_EPSILON = 0.0001f;
         String modelParamsPath = "model";
@@ -80,7 +80,7 @@ public class TrainBird {
 
             DefaultTrainingConfig config = setupTrainingConfig();
             try (Trainer trainer = model.newTrainer(config)) {
-                trainer.initialize(new Shape(1, 4, 80, 80));
+                trainer.initialize(new Shape(batchSize, 4, 80, 80));
 
                 trainer.notifyListeners(listener -> listener.onTrainingBegin(trainer));
 
@@ -114,12 +114,12 @@ public class TrainBird {
                 } finally {
                     executorService.shutdown();
                 }
-            }
-
 //                while (true) {
 //                    game.runEnv(agent, true);
-//                    model.save(Paths.get(modelParamsPath), "dqn-" + Game.getTimeStep());
 //                }
+//            } catch (CloneNotSupportedException e) {
+//                e.printStackTrace();
+
 ////                 输出神经网络的结构
 //                Shape currentShape = new Shape(1, 4, 80, 80);
 //                for (int i = 0; i < block.getChildren().size(); i++) {
@@ -127,8 +127,8 @@ public class TrainBird {
 //                    currentShape = newShape[0];
 //                    System.out.println(block.getChildren().get(i).getKey() + " layer output : " + currentShape);
 //                }
+            }
         }
-
     }
 
     private static class TrainerCallable implements Callable<Object> {
@@ -145,8 +145,7 @@ public class TrainBird {
             while (Game.trainStep < EXPLORE) {
                 Thread.sleep(0);
                 if (Game.timeStep > OBSERVE) {
-                    System.out.println("********Train********");
-                    this.agent.trainBatch(trainBatch);
+                    this.agent.trainBatch(batchSteps);
                     Game.trainStep++;
                     if (Game.trainStep > 0 && Game.trainStep % 10000 == 0) {
                         model.save(Paths.get("model"), "dqn-" + Game.trainStep);
@@ -169,7 +168,7 @@ public class TrainBird {
         @Override
         public Object call() throws Exception {
             while (Game.trainStep < EXPLORE) {
-                trainBatch = game.runEnv(agent, true);
+                batchSteps = game.runEnv(agent, true);
             }
             return null;
         }
