@@ -1,9 +1,9 @@
-package com.kingyu.rlbird.game;
+package com.kingyu.rlbird.game.content;
 
-import java.awt.Graphics;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
+import com.kingyu.rlbird.game.FlappyBird;
 import com.kingyu.rlbird.util.Constant;
 import com.kingyu.rlbird.util.GameUtil;
 //import org.bird.util.MusicUtil;
@@ -25,7 +25,7 @@ public class Bird {
     public static final int BIRD_DEAD = 2;
 
     private final Rectangle birdCollisionRect;
-    public static final int RECT_DESCALE = 2; // 补偿碰撞矩形宽高的参数
+    public static final int RECT_DESCALE = 2; // 碰撞矩形宽高的补偿参数
 
     private final ScoreCounter scoreCounter;
     static BufferedImage birdImages;
@@ -45,9 +45,8 @@ public class Bird {
         x = Constant.FRAME_WIDTH >> 2;
         y = Constant.FRAME_HEIGHT >> 1;
 
-        // 初始化碰撞矩形
         int rectX = x - (BIRD_WIDTH >> 1);
-        int rectY = y - (BIRD_HEIGHT >> 1) + 4; // 位置补偿
+        int rectY = y - (BIRD_HEIGHT >> 1) + RECT_DESCALE * 2;
         birdCollisionRect = new Rectangle(rectX + RECT_DESCALE, rectY + RECT_DESCALE * 2, BIRD_WIDTH - RECT_DESCALE * 3,
                 BIRD_HEIGHT - RECT_DESCALE * 4); // 碰撞矩形的坐标与小鸟相同
     }
@@ -55,9 +54,8 @@ public class Bird {
     public void draw(Graphics g) {
         movement();
         drawBirdImg(g);
-
 //        g.setColor(Color.white);
-//        g.drawRect((int) birdRect.getX(), (int) birdRect.getY(), (int) birdRect.getWidth(), (int) birdRect.getHeight());
+//        g.drawRect((int) birdCollisionRect.getX(), (int)birdCollisionRect.getY(), (int) birdCollisionRect.getWidth(), (int) birdCollisionRect.getHeight());
     }
 
     public void drawBirdImg(Graphics g) {
@@ -79,7 +77,7 @@ public class Bird {
         birdCollisionRect.y = birdCollisionRect.y - velocity;
         if (birdCollisionRect.y < GameElementLayer.MIN_HEIGHT ||
                 birdCollisionRect.y > Constant.FRAME_HEIGHT - GameBackground.GROUND_HEIGHT - GameElementLayer.MIN_HEIGHT) {
-            Game.setCurrentReward(0.1f);
+            FlappyBird.setCurrentReward(0.1f);
         }
         if (birdCollisionRect.y < Constant.WINDOW_BAR_HEIGHT) {
             die();
@@ -101,9 +99,9 @@ public class Bird {
     }
 
     public void die() {
-        Game.setCurrentReward(-1f);
-        Game.setCurrentTerminal(true);
-        Game.setGameState(Game.GAME_OVER);
+        FlappyBird.setCurrentReward(-1f);
+        FlappyBird.setCurrentTerminal(true);
+        FlappyBird.setGameState(FlappyBird.GAME_OVER);
         birdState = BIRD_DEAD;
     }
 
@@ -116,7 +114,7 @@ public class Bird {
         y = Constant.FRAME_HEIGHT >> 1;
         velocity = 0;
         int ImgHeight = birdImages.getHeight();
-        birdCollisionRect.y = y + 4 - ImgHeight / 2 + RECT_DESCALE * 2;
+        birdCollisionRect.y = y + RECT_DESCALE * 4 - ImgHeight / 2;
         scoreCounter.reset();
     }
 
@@ -131,20 +129,6 @@ public class Bird {
     public Rectangle getBirdCollisionRect() {
         return birdCollisionRect;
     }
-
-
-//    // 绘制实时分数
-//    private void drawScore(Graphics g) {
-//        g.setColor(Color.white);
-//        g.setFont(Constant.CURRENT_SCORE_FONT);
-//        String str = Long.toString(counter.getCurrentScore());
-//        int x = Constant.FRAME_WIDTH - GameUtil.getStringWidth(Constant.CURRENT_SCORE_FONT, str) >> 1;
-//        g.drawString(str, x, Constant.FRAME_HEIGHT / 10);
-//    }
-
-//    public long getBestScore() {
-//        return counter.getBestScore();
-//    }
 
     // private boolean keyRelease = true; // 按键状态
 //

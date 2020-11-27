@@ -21,9 +21,10 @@ import ai.djl.training.listener.TrainingListener;
 import ai.djl.training.loss.Loss;
 import ai.djl.training.tracker.LinearTracker;
 import ai.djl.training.tracker.Tracker;
-import com.kingyu.rlbird.game.Game;
+import com.kingyu.rlbird.game.FlappyBird;
 import com.kingyu.rlbird.rl.env.RlEnv;
 import com.kingyu.rlbird.util.Arguments;
+import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,39 +45,42 @@ public class TrainBird {
     private TrainBird() {
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ParseException {
         TrainBird.train(args);
     }
 
-    public static void train(String[] args) {
+    public static void train(String[] args) throws ParseException {
         Arguments arguments = Arguments.parseArgs(args);
 
-        int gameMode = 2;  // 1:no ui   2:ui
-        int batchSize = 32;  // size of mini batch
+        int gameMode = arguments.getTrainingMode();  // 0:no ui   1:ui
+        int batchSize = arguments.getBatchSize();  // size of mini batch
+        String modelParamsPath = "model";
+        String modelParamsName = "dqn-latest";
         int replayBufferSize = 50000; // number of previous transitions to remember;
         float rewardDiscount = 0.9f;  // decay rate of past observations
         float INITIAL_EPSILON = 0.01f;
         float FINAL_EPSILON = 0.0001f;
-        String modelParamsPath = "model";
-        String modelParamsName = "dqn-80000";
 
-        Game game = new Game(NDManager.newBaseManager(), batchSize, replayBufferSize, gameMode);
-
+        FlappyBird game = new FlappyBird(NDManager.newBaseManager(), batchSize, replayBufferSize, gameMode);
         SequentialBlock block = getBlock();
 
         try (Model model = Model.newInstance("QNetwork")) {
             model.setBlock(block);
 
-            File file = new File(modelParamsPath + "/"+  modelParamsName + "-0000.params");
-            if (file.exists()) {
-                try {
-                    model.load(Paths.get(modelParamsPath), modelParamsName);
-                    logger.info("Success load model");
-                } catch (MalformedModelException | IOException e) {
-                    e.printStackTrace();
+            if(arguments.isPreTrained()) {
+            File file = new File(modelParamsPath + "/" + modelParamsName + "-0000.params");
+                if (file.exists()) {
+                    try {
+                        model.load(Paths.get(modelParamsPath), modelParamsName);
+                        logger.info("Model load successfully");
+                    } catch (MalformedModelException | IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    logger.info("Model doesn't exist");
                 }
-            } else {
-                logger.info("Model doesn't exist");
+            }else{
+                logger.info("Start training");
             }
 
             DefaultTrainingConfig config = setupTrainingConfig();
@@ -142,13 +146,13 @@ public class TrainBird {
 
         @Override
         public Object call() throws Exception {
-            while (Game.trainStep < EXPLORE) {
+            while (FlappyBird.trainStep < EXPLORE) {
                 Thread.sleep(0);
-                if (Game.timeStep > OBSERVE) {
+                if (FlappyBird.timeStep > OBSERVE) {
                     this.agent.trainBatch(batchSteps);
-                    Game.trainStep++;
-                    if (Game.trainStep > 0 && Game.trainStep % 10000 == 0) {
-                        model.save(Paths.get("model"), "dqn-" + Game.trainStep);
+                    FlappyBird.trainStep++;
+                    if (FlappyBird.trainStep > 0 && FlappyBird.trainStep % 100000 == 0) {
+                        model.save(Paths.get("model"), "dqn-" + FlappyBird.trainStep);
                     }
                 }
             }
@@ -157,17 +161,17 @@ public class TrainBird {
     }
 
     private static class GeneratorCallable implements Callable<Object> {
-        private final Game game;
+        private final FlappyBird game;
         private final RlAgent agent;
 
-        public GeneratorCallable(Game game, RlAgent agent) {
+        public GeneratorCallable(FlappyBird game, RlAgent agent) {
             this.game = game;
             this.agent = agent;
         }
 
         @Override
-        public Object call() throws Exception {
-            while (Game.trainStep < EXPLORE) {
+        public Object call() {
+            while (FlappyBird.trainStep < EXPLORE) {
                 batchSteps = game.runEnvironment(agent, true);
             }
             return null;
