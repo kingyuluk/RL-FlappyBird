@@ -1,4 +1,4 @@
-package com.kingyu.rlbird.game;
+package com.kingyu.rlbird.game.content;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -22,15 +22,15 @@ public class Pipe {
         }
     }
 
-    // 所有水管的宽高
+    // 水管图片的宽高
     public static final int PIPE_WIDTH = images[0].getWidth();
     public static final int PIPE_HEIGHT = images[0].getHeight();
     public static final int PIPE_HEAD_WIDTH = images[1].getWidth();
     public static final int PIPE_HEAD_HEIGHT = images[1].getHeight();
 
-    private int x, y; // 水管的坐标，相对于元素层
-    private final int width;
-    private int height; // 水管的宽，高
+    private int x, y; // 水管相对于元素层的坐标
+    private final int width; // 水管的宽度
+    private int height; // 水管的高度
 
     boolean visible; // 水管可见状态，true为可见，false表示可归还至对象池
     // 水管的类型
@@ -138,17 +138,14 @@ public class Pipe {
         return x + width < Constant.FRAME_WIDTH;
     }
 
-    // 获取水管的x坐标
     public int getX() {
         return x;
     }
 
-    // 获取水管的碰撞矩形
     public Rectangle getPipeCollisionRect() {
         return pipeCollisionRect;
     }
 
-    // 判断水管是否可见
     public boolean isVisible() {
         return visible;
     }

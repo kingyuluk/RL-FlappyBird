@@ -10,19 +10,24 @@ Training Flappy Bird Using Reinforcement Learning.
 ## Overview
 DQN implemented based on DJL.
 
-## How to run
+## Build the project and run
 This project integrates DJL by using Maven. 
-
 ```
 mvn compile  
 mvn exec:java -Dexec.mainClass="com.kingyu.rlbird.ai.TrainBird"
 ```
+You can also run with arguments.
+
+| Argument   | Comments                                 |
+ | ---------- | ---------------------------------------- |
+ | `-m`       | Training mode: <br>0: Training without UI, fastest training mode<br>1: Normal training mode with UI
+ | `-b`       | Batch size to use for training. |
+ | `-p`       | Use pre-trained weights. |
+
 
 ## Notes
 
 The default mode is without graphics.
-
-The graphical interface can be opened in ai/TrainBird.java on Line 54.
 
 ## Package Contents
 * org.kingyu.rlbird.ai    

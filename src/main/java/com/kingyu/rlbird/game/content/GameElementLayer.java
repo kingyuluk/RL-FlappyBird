@@ -1,9 +1,10 @@
-package com.kingyu.rlbird.game;
+package com.kingyu.rlbird.game.content;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.kingyu.rlbird.game.FlappyBird;
 import com.kingyu.rlbird.util.Constant;
 import com.kingyu.rlbird.util.GameUtil;
 
@@ -70,7 +71,7 @@ public class GameElementLayer {
             if (pipes.size() >= PipePool.FULL_PIPE
                     && currentDistance <= 265
                     && currentDistance > 260) {
-                Game.setCurrentReward(0.8f);
+                FlappyBird.setCurrentReward(0.8f);
             }
             if (pipes.size() >= PipePool.FULL_PIPE
                     && currentDistance <= SCORE_DISTANCE

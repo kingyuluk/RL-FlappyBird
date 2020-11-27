@@ -1,5 +1,8 @@
 package com.kingyu.rlbird.game;
 
+import com.kingyu.rlbird.game.content.Bird;
+import com.kingyu.rlbird.game.content.GameBackground;
+import com.kingyu.rlbird.game.content.GameElementLayer;
 import com.kingyu.rlbird.rl.ActionSpace;
 import com.kingyu.rlbird.rl.LruReplayBuffer;
 import com.kingyu.rlbird.rl.ReplayBuffer;
@@ -27,13 +30,13 @@ import static com.kingyu.rlbird.util.Constant.*;
  * @author Kingyu
  */
 
-public class Game extends Frame implements RlEnv {
+public class FlappyBird extends Frame implements RlEnv {
     private static final long serialVersionUID = 1L;
-    private static final Logger logger = LoggerFactory.getLogger(Game.class);
+    private static final Logger logger = LoggerFactory.getLogger(FlappyBird.class);
 
-    private static int gameMode;
-    public static final int NOUI_MODE = 1;
-    public static final int UI_MODE = 2;
+    private static int trainingMode;
+    public static final int NOUI_MODE = 0;
+    public static final int UI_MODE = 1;
 
     private static int gameState;
     public static final int GAME_START = 1;
@@ -49,15 +52,15 @@ public class Game extends Frame implements RlEnv {
     private State currentState;
 
     /**
-     * Constructs a {@link Game} with a basic {@link LruReplayBuffer}.
+     * Constructs a {@link FlappyBird} with a basic {@link LruReplayBuffer}.
      *
      * @param manager          the manager for creating the game in
      * @param batchSize        the number of steps to train on per batch
      * @param replayBufferSize the number of steps to hold in the buffer
      */
-    public Game(NDManager manager, int batchSize, int replayBufferSize, int gameMode) {
+    public FlappyBird(NDManager manager, int batchSize, int replayBufferSize, int gameMode) {
         this(manager, new LruReplayBuffer(batchSize, replayBufferSize));
-        setGameMode(gameMode);
+        setTrainingMode(gameMode);
         if (gameMode == UI_MODE) {
             initFrame(); // 初始化游戏窗口
             this.setVisible(true);
@@ -69,12 +72,12 @@ public class Game extends Frame implements RlEnv {
     }
 
     /**
-     * Constructs a {@link Game}.
+     * Constructs a {@link FlappyBird}.
      *
      * @param manager      the manager for creating the game in
      * @param replayBuffer the replay buffer for storing data
      */
-    public Game(NDManager manager, ReplayBuffer replayBuffer) {
+    public FlappyBird(NDManager manager, ReplayBuffer replayBuffer) {
         this.manager = manager;
         this.replayBuffer = replayBuffer;
         this.currentState = new State(createObservation(currentImg), currentReward, currentTerminal);
@@ -121,7 +124,7 @@ public class Game extends Frame implements RlEnv {
             bird.birdFlap();
         }
         stepFrame();
-        if (gameMode == UI_MODE) {
+        if (trainingMode == UI_MODE) {
             repaint();
             try {
                 Thread.sleep(FPS);
@@ -374,15 +377,15 @@ public class Game extends Frame implements RlEnv {
     }
 
     public static void setGameState(int gameState) {
-        Game.gameState = gameState;
+        FlappyBird.gameState = gameState;
     }
 
-    public static void setGameMode(int gameMode) {
-        Game.gameMode = gameMode;
+    public static void setTrainingMode(int trainingMode) {
+        FlappyBird.trainingMode = trainingMode;
     }
 
-    public static int getGameMode() {
-        return gameMode;
+    public static int getTrainingMode() {
+        return trainingMode;
     }
 
     public String getTrainState() {
@@ -390,11 +393,11 @@ public class Game extends Frame implements RlEnv {
     }
 
     public static void setCurrentTerminal(boolean currentTerminal) {
-        Game.currentTerminal = currentTerminal;
+        FlappyBird.currentTerminal = currentTerminal;
     }
 
     public static void setCurrentReward(float currentReward) {
-        Game.currentReward = currentReward;
+        FlappyBird.currentReward = currentReward;
     }
 
     public long getScore() {

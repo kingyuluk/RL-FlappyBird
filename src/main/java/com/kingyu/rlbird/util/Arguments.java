@@ -2,12 +2,13 @@ package com.kingyu.rlbird.util;
 
 import ai.djl.Device;
 
-import com.kingyu.rlbird.game.Game;
+import com.kingyu.rlbird.game.FlappyBird;
 import org.apache.commons.cli.*;
 
 public class Arguments {
 
-    private int gameMode;
+    private final int trainingMode;
+    private int batchSize;
     private int maxGpus;
     private boolean preTrained;
     private String outputDir;
@@ -16,16 +17,22 @@ public class Arguments {
     public Arguments(CommandLine cmd) {
         maxGpus = Device.getGpuCount();
         if (cmd.hasOption("game-mode")) {
-            gameMode = Math.min(Integer.parseInt(cmd.getOptionValue("game-mode")), gameMode);
+            trainingMode = Integer.parseInt(cmd.getOptionValue("game-mode"));
+        } else {
+            trainingMode = FlappyBird.NOUI_MODE;
         }
-        else{
-            gameMode = Game.UI_MODE;
+
+        if (cmd.hasOption("batch-size")) {
+            batchSize = Integer.parseInt(cmd.getOptionValue("batch-size"));
+        } else {
+            batchSize = maxGpus > 0 ? 32 * maxGpus : 32;
         }
+
+        preTrained = cmd.hasOption("pre-trained");
 
         if (cmd.hasOption("max-gpus")) {
             maxGpus = Math.min(Integer.parseInt(cmd.getOptionValue("max-gpus")), maxGpus);
         }
-        preTrained = cmd.hasOption("pre-trained");
 
         if (cmd.hasOption("output-dir")) {
             outputDir = cmd.getOptionValue("output-dir");
@@ -39,32 +46,34 @@ public class Arguments {
         }
     }
 
-    public static Arguments parseArgs(String[] args) {
+    public static Arguments parseArgs(String[] args) throws ParseException {
         Options options = Arguments.getOptions();
-        try {
-            DefaultParser parser = new DefaultParser();
-            CommandLine cmd = parser.parse(options, args, null, false);
-            if (cmd.hasOption("help")) {
-                printHelp("./gradlew run --args='[OPTIONS]'", options);
-                return null;
-            }
-            return new Arguments(cmd);
-        } catch (ParseException e) {
-            printHelp("./gradlew run --args='[OPTIONS]'", options);
-        }
-        return null;
+        DefaultParser parser = new DefaultParser();
+        CommandLine cmd = parser.parse(options, args, null, false);
+        return new Arguments(cmd);
     }
 
     public static Options getOptions() {
         Options options = new Options();
         options.addOption(
-                Option.builder("h").longOpt("help").hasArg(false).desc("Print this help.").build());
-        options.addOption(
                 Option.builder("m")
                         .longOpt("game-mode")
                         .argName("GAMEMODE")
                         .hasArg()
-                        .desc("Game mode would like to run")
+                        .desc("Training mode would like to run")
+                        .build());
+        options.addOption(
+                Option.builder("b")
+                        .longOpt("batch-size")
+                        .hasArg()
+                        .argName("BATCH-SIZE")
+                        .desc("The batch size of the training data.")
+                        .build());
+        options.addOption(
+                Option.builder("p")
+                        .longOpt("pre-trained")
+                        .argName("PRE-TRAINED")
+                        .desc("Use pre-trained weights")
                         .build());
         options.addOption(
                 Option.builder("g")
@@ -72,12 +81,6 @@ public class Arguments {
                         .hasArg()
                         .argName("MAXGPUS")
                         .desc("Max number of GPUs to use for training")
-                        .build());
-        options.addOption(
-                Option.builder("p")
-                        .longOpt("pre-trained")
-                        .argName("PRE-TRAINED")
-                        .desc("Use pre-trained weights")
                         .build());
         options.addOption(
                 Option.builder("o")
@@ -96,32 +99,27 @@ public class Arguments {
         return options;
     }
 
-
-
-    public int getMaxGpus() {
-        return maxGpus;
+    public int getTrainingMode() {
+        return trainingMode;
     }
 
-    public int getGameMode(){
-        return gameMode;
+    public int getBatchSize() {
+        return batchSize;
     }
 
     public boolean isPreTrained() {
         return preTrained;
     }
 
-    public String getModelDir() {
-        return modelDir;
-    }
-
     public String getOutputDir() {
         return outputDir;
     }
 
-    private static void printHelp(String msg, Options options) {
-        HelpFormatter formatter = new HelpFormatter();
-        formatter.setLeftPadding(1);
-        formatter.setWidth(120);
-        formatter.printHelp(msg, options);
+    public int getMaxGpus() {
+        return maxGpus;
+    }
+
+    public String getModelDir() {
+        return modelDir;
     }
 }

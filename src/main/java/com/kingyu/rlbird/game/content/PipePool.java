@@ -1,4 +1,4 @@
-package com.kingyu.rlbird.game;
+package com.kingyu.rlbird.game.content;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +17,7 @@ public class PipePool {
             / (Pipe.PIPE_HEAD_WIDTH + GameElementLayer.HORIZONTAL_INTERVAL) + 2) * 2;
 
     private static final List<Pipe> pool = new ArrayList<>();
-    public static final int MAX_PIPE_COUNT = 30; // 对象池中对象的最大个数，自行定义
+    public static final int MAX_PIPE_COUNT = 30; // 对象池中对象的最大个数
 
     // 初始化水管容器
     static {
