@@ -10,10 +10,10 @@
  * OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package com.kingyu.rlflappybird.rl;
+package com.kingyu.rlbird.rl;
 
 import ai.djl.util.RandomUtils;
-import com.kingyu.rlflappybird.rl.env.RlEnv;
+import com.kingyu.rlbird.rl.env.RlEnv;
 
 /**
  * A simple {@link ReplayBuffer} that randomly selects across the whole buffer, but always removes

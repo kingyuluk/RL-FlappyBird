@@ -12,8 +12,9 @@
  */
 
 /**
- * Contains environments to train reinforcement learning in.
+ * Contains agents to learn using reinforcement learning.
  *
- * <p>It has a base interface {@link ai.djl.modality.rl.env.RlEnv} as well as class implementing it.
+ * <p>It has the main interface {@link ai.djl.modality.rl.agent.RlAgent} and various agents
+ * implementing it.
  */
-package com.kingyu.rlflappybird.rl.env;
+package com.kingyu.rlbird.rl.agent;

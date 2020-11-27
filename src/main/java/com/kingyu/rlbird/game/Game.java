@@ -1,15 +1,17 @@
-package com.kingyu.rlflappybird.game;
+package com.kingyu.rlbird.game;
 
-import com.kingyu.rlflappybird.rl.ActionSpace;
-import com.kingyu.rlflappybird.rl.LruReplayBuffer;
-import com.kingyu.rlflappybird.rl.ReplayBuffer;
-import com.kingyu.rlflappybird.rl.agent.RlAgent;
-import com.kingyu.rlflappybird.rl.env.RlEnv;
+import com.kingyu.rlbird.rl.ActionSpace;
+import com.kingyu.rlbird.rl.LruReplayBuffer;
+import com.kingyu.rlbird.rl.ReplayBuffer;
+import com.kingyu.rlbird.rl.agent.RlAgent;
+import com.kingyu.rlbird.rl.env.RlEnv;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDArrays;
 import ai.djl.ndarray.NDList;
 import ai.djl.ndarray.NDManager;
-import com.kingyu.rlflappybird.util.GameUtil;
+import com.kingyu.rlbird.util.GameUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -17,39 +19,34 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.util.*;
 
-import static com.kingyu.rlflappybird.ai.TrainBird.OBSERVE;
-import static com.kingyu.rlflappybird.util.Constant.*;
+import static com.kingyu.rlbird.ai.TrainBird.OBSERVE;
+import static com.kingyu.rlbird.util.Constant.*;
 
 /**
- * 主窗口类，游戏窗口和绘制的相关内容
  *
  * @author Kingyu
  */
 
 public class Game extends Frame implements RlEnv {
-    private static final long serialVersionUID = 1L; // 保持版本的兼容性
-
-//    private final NDManager subManager = NDManager.newBaseManager();
+    private static final long serialVersionUID = 1L;
+    private static final Logger logger = LoggerFactory.getLogger(Game.class);
 
     private static int gameMode;
-    public static final int NORMAL_MODE = 0;
     public static final int NOUI_MODE = 1;
     public static final int UI_MODE = 2;
 
-    private static int gameState; // 游戏状态
-    //    public static final int GAME_READY = 0; // 游戏未开始
-    public static final int GAME_START = 1; // 游戏开始
-    public static final int GAME_OVER = 2; // 游戏结束
+    private static int gameState;
+    public static final int GAME_START = 1;
+    public static final int GAME_OVER = 2;
 
-    private GameBackground background; // 游戏背景
-    private Bird bird; // 小鸟
-    private GameElementLayer gameElement; // 游戏元素
-    public static boolean birdFlapped = false;
+    private GameBackground background;
+    private Bird bird;
+    private GameElementLayer gameElement;
 
     private final NDManager manager;
     private final ReplayBuffer replayBuffer;
+    private final BufferedImage currentImg = new BufferedImage(FRAME_WIDTH, FRAME_HEIGHT, BufferedImage.TYPE_4BYTE_ABGR);
     private State currentState;
-    private State postState;
 
     /**
      * Constructs a {@link Game} with a basic {@link LruReplayBuffer}.
@@ -61,11 +58,13 @@ public class Game extends Frame implements RlEnv {
     public Game(NDManager manager, int batchSize, int replayBufferSize, int gameMode) {
         this(manager, new LruReplayBuffer(batchSize, replayBufferSize));
         setGameMode(gameMode);
-        if (gameMode != NOUI_MODE) {
+        if (gameMode == UI_MODE) {
             initFrame(); // 初始化游戏窗口
-            setVisible(true);
+            this.setVisible(true);
         }
-        initGame(); // 初始化游戏
+        background = new GameBackground();
+        gameElement = new GameElementLayer();
+        bird = new Bird();
         setGameState(GAME_START);
     }
 
@@ -78,40 +77,31 @@ public class Game extends Frame implements RlEnv {
     public Game(NDManager manager, ReplayBuffer replayBuffer) {
         this.manager = manager;
         this.replayBuffer = replayBuffer;
-        this.currentState = new State(createObservation(bufImg), currentReward, currentTerminal);
-        this.postState = new State(createObservation(bufImg), currentReward, currentTerminal);
+        this.currentState = new State(createObservation(currentImg), currentReward, currentTerminal);
+//        this.postState = new State(createObservation(bufImg), currentReward, currentTerminal);
     }
 
     public static int timeStep = 0;
     public static int trainStep = 0;
     private static boolean currentTerminal = false;
-    private static float currentReward = 0.1f;
+    private static float currentReward = 0.2f;
     private String trainState = "observe";
 
-    public Step[] runEnv(RlAgent agent, boolean training) throws CloneNotSupportedException {
-        /*
-         * input_actions[0] == 1: do nothing
-         * input_actions[1] == 1: flap the bird
-         */
-//        final TrainImplements trainImplements = new TrainImplements(agent);
-//        final Thread trainThread = new Thread(trainImplements);
-//        if(!trainThread.isAlive()) {
-//            trainThread.start();
-//        }
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Step[] runEnvironment(RlAgent agent, boolean training) {
         // run the game
         NDList action = agent.chooseAction(this, training);
         step(action, training);
         Step[] batchSteps = this.getBatch();
-//        if(timeStep > OBSERVE) {
-//            agent.trainBatch(batchSteps);
-//            trainStep++;
-//        }
         if (timeStep <= OBSERVE) {
             trainState = "observe";
         } else {
             trainState = "explore";
         }
-        this.currentState = postState.clone();
+//        this.currentState = postState.clone();
         timeStep++;
         return batchSteps;
     }
@@ -140,21 +130,24 @@ public class Game extends Frame implements RlEnv {
             }
         }
 
-        State preState = new State(postState.getObservation(), currentReward, currentTerminal);
-        postState = new State(createObservation(bufImg), currentReward, currentTerminal);
+//        State preState = new State(postState.getObservation(), currentReward, currentTerminal);
+        State preState = new State(currentState.getObservation(), currentReward, currentTerminal);
+//        postState = new State(createObservation(bufImg), currentReward, currentTerminal);
+        currentState = new State(createObservation(currentImg), currentReward, currentTerminal);
 
-        FlappyBirdStep step = new FlappyBirdStep(manager.newSubManager(), preState, postState, action);
+//        FlappyBirdStep step = new FlappyBirdStep(manager.newSubManager(), preState, postState, action);
+        FlappyBirdStep step = new FlappyBirdStep(manager.newSubManager(), preState, currentState, action);
         if (training) {
             replayBuffer.addStep(step);
         }
-        System.out.println("TIME_STEP " + timeStep +
+        logger.info("TIME_STEP " + timeStep +
                 " / " + "TRAIN_STEP " + trainStep +
                 " / " + getTrainState() +
                 " / " + "ACTION " + (Arrays.toString(action.singletonOrThrow().toArray())) +
                 " / " + "REWARD " + step.getReward().getFloat() +
                 " / " + "SCORE " + getScore());
         if (gameState == GAME_OVER) {
-            resetGame();
+            restartGame();
         }
     }
 
@@ -195,13 +188,22 @@ public class Game extends Frame implements RlEnv {
      */
     @Override
     public void reset() {
+        currentReward = 0.2f;
+        currentTerminal = false;
     }
 
     private final Queue<NDArray> imgQueue = new ArrayDeque<>(4);
 
-    public NDList createObservation(BufferedImage postImg) {
-        // 获取连续帧（4）图片：复制当前帧图片 -> 堆积成4帧图片 -> 将获取到得下一帧图片替换当前第4帧，保证当前的batch图片是连续的。
-        NDArray observation = GameUtil.imgPreprocess(postImg);
+    /**
+     * Convert image to CNN input.
+     * Copy the initial frame image, stack into NDList,
+     * then replace the fourth frame with the current frame to ensure that the batch picture is continuous.
+     *
+     * @param currentImg  the image of current frame
+     * @return the CNN input
+     */
+    public NDList createObservation(BufferedImage currentImg) {
+        NDArray observation = GameUtil.imgPreprocess(currentImg);
         if (imgQueue.isEmpty()) {
             for (int i = 0; i < 4; i++) {
                 imgQueue.offer(observation);
@@ -288,8 +290,8 @@ public class Game extends Frame implements RlEnv {
         }
     }
 
-    private static final class State implements Cloneable {
-        private NDList observation;
+    private static final class State{
+        private final NDList observation;
         private final float reward;
         private final boolean terminal;
 
@@ -318,32 +320,33 @@ public class Game extends Frame implements RlEnv {
             return terminal;
         }
 
-        @Override
-        public State clone() throws CloneNotSupportedException {
-            State cloned = (State) super.clone();
-            cloned.observation = (NDList) this.observation.clone();
-            return cloned;
-        }
+//        @Override
+//        public State clone() throws CloneNotSupportedException {
+//            State cloned = (State) super.clone();
+//            cloned.observation = (NDList) this.observation.clone();
+//            return cloned;
+//        }
     }
-
-
-    private final BufferedImage bufImg = new BufferedImage(FRAME_WIDTH, FRAME_HEIGHT, BufferedImage.TYPE_4BYTE_ABGR);
 
     /**
      * Draw one frame by performing all elements' draw function.
      */
     public void stepFrame() {
-        Graphics bufG = bufImg.getGraphics();
+        Graphics bufG = currentImg.getGraphics();
         background.draw(bufG, bird);
         bird.draw(bufG);
         gameElement.draw(bufG, bird);
     }
 
+    /**
+     * Initialize the game frame
+     */
     private void initFrame() {
         setSize(FRAME_WIDTH, FRAME_HEIGHT); // 设置窗口大小
         setTitle(GAME_TITLE); // 设置窗口标题
         setLocation(FRAME_X, FRAME_Y); // 窗口初始位置
         setResizable(false); // 设置窗口大小不可变
+        setVisible(true);
         // 添加关闭窗口事件（监听窗口发生的事件，派发给参数对象，参数对象调用对应的方法）
         addWindowListener(new WindowAdapter() {
             @Override
@@ -353,27 +356,21 @@ public class Game extends Frame implements RlEnv {
         });
     }
 
-    private void initGame() {
-        background = new GameBackground();
-        gameElement = new GameElementLayer();
-        bird = new Bird();
-//        new Thread(this).start();  // 启动线程
-    }
-
     /**
      * Restart game
      */
-    private void resetGame() {
+    private void restartGame() {
         setGameState(GAME_START);
         gameElement.reset();
         bird.reset();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void update(Graphics g) {
-        if (gameMode != NOUI_MODE) {
-            g.drawImage(bufImg, 0, 0, null); // 将图片绘制到屏幕
-        }
-        birdFlapped = false;
+        g.drawImage(currentImg, 0, 0, null);
     }
 
     public static void setGameState(int gameState) {
@@ -389,11 +386,7 @@ public class Game extends Frame implements RlEnv {
     }
 
     public String getTrainState() {
-        return trainState;
-    }
-
-    public boolean isTraining() {
-        return gameMode != NORMAL_MODE;
+        return this.trainState;
     }
 
     public static void setCurrentTerminal(boolean currentTerminal) {
@@ -405,27 +398,6 @@ public class Game extends Frame implements RlEnv {
     }
 
     public long getScore() {
-        return bird.getCurrentScore();
+        return this.bird.getCurrentScore();
     }
-
-    //    class TrainImplements implements Runnable {
-//        private final RlAgent agent;
-//        public TrainImplements(RlAgent agent) {
-//            this.agent = agent;
-//        }
-//        public void run() {
-//            while (true) {
-//                try {
-//                    Thread.sleep(0);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//                if (timeStep > TrainBird.OBSERVE) {
-//                    System.out.println("*****start training*****");
-//                    this.agent.trainBatch(batchSteps);
-//                    trainStep++;
-//                }
-//            }
-//        }
-//    }
 }

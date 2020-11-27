@@ -1,12 +1,10 @@
-package com.kingyu.rlflappybird.game;
+package com.kingyu.rlbird.game;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 
-import com.kingyu.rlflappybird.util.Constant;
+import com.kingyu.rlbird.util.Constant;
 //import org.bird.util.MusicUtil;
 
 /**
@@ -17,11 +15,10 @@ import com.kingyu.rlflappybird.util.Constant;
 public class ScoreCounter {
     private static final ScoreCounter scoreCounter = new ScoreCounter();
 
-    private long score = 0; // 分数
-    private long bestScore; // 最高分数
+    private long score = 0;
+    private long bestScore = -1;
 
     private ScoreCounter() {
-        bestScore = -1;
         try {
             loadBestScore();
         } catch (Exception e) {
@@ -33,7 +30,6 @@ public class ScoreCounter {
         return scoreCounter;
     }
 
-    // 装载最高纪录
     private void loadBestScore() throws Exception {
         File file = new File(Constant.SCORE_FILE_PATH);
         if (file.exists()) {
@@ -43,22 +39,10 @@ public class ScoreCounter {
         }
     }
 
-    public void saveScore() {
-        bestScore = Math.max(bestScore, getCurrentScore());
-        try {
-            File file = new File(Constant.SCORE_FILE_PATH);
-            DataOutputStream dos = new DataOutputStream(new FileOutputStream(file));
-            dos.writeLong(bestScore);
-            dos.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     public void score(Bird bird) {
         if (!bird.isDead()) {
 //			MusicUtil.playScore();
-            Game.setCurrentReward(1.2f);
+            Game.setCurrentReward(1f);
             score += 1;
         }
     }

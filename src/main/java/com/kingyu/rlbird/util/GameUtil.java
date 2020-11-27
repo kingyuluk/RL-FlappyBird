@@ -1,11 +1,10 @@
-package com.kingyu.rlflappybird.util;
+package com.kingyu.rlbird.util;
 
 import ai.djl.modality.cv.Image;
 import ai.djl.modality.cv.ImageFactory;
 import ai.djl.modality.cv.util.NDImageUtils;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDManager;
-import ai.djl.ndarray.types.DataType;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -24,7 +23,7 @@ import javax.imageio.ImageIO;
 public class GameUtil {
 
     private GameUtil() {
-    } // 私有化，防止其他类实例化此类
+    }
 
     /**
      * 装载图片
@@ -42,26 +41,6 @@ public class GameUtil {
     }
 
     /**
-     * 判断任意概率的概率性事件是否发生
-     *
-     * @param numerator   分子，不小于0的值
-     * @param denominator 分母，不小于0的值
-     * @return 概率性事件发生返回true，否则返回false
-     */
-    public static boolean isInProbability(int numerator, int denominator) throws Exception {
-        // 分子分母不小于0
-        if (numerator <= 0 || denominator <= 0) {
-            throw new Exception("传入了非法的参数");
-        }
-        //分子大于分母，一定发生
-        if (numerator >= denominator) {
-            return true;
-        }
-
-        return getRandomNumber(1, denominator + 1) <= numerator;
-    }
-
-    /**
      * 返回指定区间的一个随机数
      *
      * @param min 区间最小值，包含
@@ -73,22 +52,7 @@ public class GameUtil {
     }
 
     /**
-     * 获得指定字符串在指定字体的宽高
-     */
-    public static int getStringWidth(Font font, String str) {
-        AffineTransform affinetransform = new AffineTransform();
-        FontRenderContext frc = new FontRenderContext(affinetransform, true, true);
-        return (int) (font.getStringBounds(str, frc).getWidth());
-    }
-
-    public static int getStringHeight(Font font, String str) {
-        AffineTransform affinetransform = new AffineTransform();
-        FontRenderContext frc = new FontRenderContext(affinetransform, true, true);
-        return (int) (font.getStringBounds(str, frc).getHeight());
-    }
-
-    /**
-     * Use g to draw image on (x, y)
+     * draw image on (x, y)
      */
     public static void drawImage(BufferedImage image, int x, int y, Graphics g) {
         g.drawImage(image, x, y, null);

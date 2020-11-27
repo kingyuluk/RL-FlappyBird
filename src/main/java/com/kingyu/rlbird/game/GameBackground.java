@@ -1,19 +1,18 @@
-package com.kingyu.rlflappybird.game;
+package com.kingyu.rlbird.game;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
-import com.kingyu.rlflappybird.util.Constant;
-import com.kingyu.rlflappybird.util.GameUtil;
+import com.kingyu.rlbird.util.Constant;
+import com.kingyu.rlbird.util.GameUtil;
 
 /**
- * 游戏背景类
  *
  * @author Kingyu
  */
 public class GameBackground {
 
-	private static final BufferedImage BackgroundImg;// 背景图片
+	private static final BufferedImage BackgroundImg;
 
 	private final int velocity;
 	private int layerX;
@@ -31,15 +30,15 @@ public class GameBackground {
 	}
 
 	public void draw(Graphics g, Bird bird) {
+		if (bird.isDead()) {
+			return;
+		}
 		g.setColor(Constant.BG_COLOR);
 		g.fillRect(0, 0, Constant.FRAME_WIDTH, Constant.FRAME_HEIGHT);
 		int imgWidth = BackgroundImg.getWidth();
 		int count = Constant.FRAME_WIDTH / imgWidth + 2; // 根据窗口宽度得到图片的绘制次数
 		for (int i = 0; i < count; i++) {
 			g.drawImage(BackgroundImg, imgWidth * i - layerX, Constant.FRAME_HEIGHT - GROUND_HEIGHT, null);
-		}
-		if (bird.isDead()) {
-			return;
 		}
 		movement();
 	}

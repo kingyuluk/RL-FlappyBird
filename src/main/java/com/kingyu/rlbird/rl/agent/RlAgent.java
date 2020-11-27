@@ -10,9 +10,9 @@
  * OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package com.kingyu.rlflappybird.rl.agent;
+package com.kingyu.rlbird.rl.agent;
 
-import com.kingyu.rlflappybird.rl.env.RlEnv;
+import com.kingyu.rlbird.rl.env.RlEnv;
 import ai.djl.ndarray.NDList;
 
 /**
