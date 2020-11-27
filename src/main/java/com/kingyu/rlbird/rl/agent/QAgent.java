@@ -10,22 +10,23 @@
  * OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package com.kingyu.rlflappybird.rl.agent;
+package com.kingyu.rlbird.rl.agent;
 
 import ai.djl.ndarray.NDArrays;
-import com.kingyu.rlflappybird.rl.ActionSpace;
-import com.kingyu.rlflappybird.rl.env.RlEnv;
-import com.kingyu.rlflappybird.rl.env.RlEnv.Step;
+import com.kingyu.rlbird.rl.ActionSpace;
+import com.kingyu.rlbird.rl.env.RlEnv;
+import com.kingyu.rlbird.rl.env.RlEnv.Step;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
 import ai.djl.training.GradientCollector;
 import ai.djl.training.Trainer;
 import ai.djl.training.listener.TrainingListener.BatchData;
 import ai.djl.translate.Batchifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -56,6 +57,7 @@ public class QAgent implements RlAgent {
         this.trainer = trainer;
         this.rewardDiscount = rewardDiscount;
     }
+    private static final Logger logger = LoggerFactory.getLogger(QAgent.class);
 
     /**
      * {@inheritDoc}
@@ -64,7 +66,7 @@ public class QAgent implements RlAgent {
     public NDList chooseAction(RlEnv env, boolean training) {
         ActionSpace actionSpace = env.getActionSpace();
         NDArray actionReward = trainer.evaluate(env.getObservation()).singletonOrThrow().get(0);
-        System.out.println(Arrays.toString(actionReward.toFloatArray()));
+        logger.info(Arrays.toString(actionReward.toFloatArray()));
         int bestAction = Math.toIntExact(actionReward.argMax().getLong());
         return actionSpace.get(bestAction);
     }
@@ -73,7 +75,6 @@ public class QAgent implements RlAgent {
      * {@inheritDoc}
      */
     @Override
-    // TODO : may have problem
     public void trainBatch(Step[] batchSteps) {
         /* Initialize replay memory D to size N
          * Initialize action-value function Q with random weights
@@ -146,6 +147,7 @@ public class QAgent implements RlAgent {
             batchData.getPredictions().put(Q.singletonOrThrow().getDevice(), Q);
             this.trainer.step();
         }
+//        trainer.notifyListeners(listener -> listener.onTrainingBatch(trainer, batchData));
 
 
 //            NDList[] Q = new NDList[batchSteps.length];
@@ -167,23 +169,5 @@ public class QAgent implements RlAgent {
 //                batchData.getPredictions().put(Q[i].get(0).getDevice(), Q[i]);
 //                this.trainer.step();
 //            }
-        /*
-         * self.trainStep.run(feed_dict={
-         *        self.yInput : y_batch,
-         *        self.actionInput : action_batch,
-         *         self.observationInput : observation_batch
-         *         })
-         */
-    }
-//        trainer.notifyListeners(listener -> listener.onTrainingBatch(trainer, batchData));
-
-
-    private NDList[] buildInputs(NDList observation) {
-        NDList[] inputs = new NDList[32];
-        for (int i = 0; i < 32; i++) {
-            NDList nextData = new NDList().addAll(observation);
-            inputs[i] = nextData;
-        }
-        return inputs;
     }
 }

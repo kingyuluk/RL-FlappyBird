@@ -10,10 +10,10 @@
  * OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package com.kingyu.rlflappybird.rl.env;
+package com.kingyu.rlbird.rl.env;
 
-import com.kingyu.rlflappybird.rl.ActionSpace;
-import com.kingyu.rlflappybird.rl.agent.RlAgent;
+import com.kingyu.rlbird.rl.ActionSpace;
+import com.kingyu.rlbird.rl.agent.RlAgent;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
 
@@ -55,25 +55,9 @@ public interface RlEnv extends AutoCloseable {
      *
      * @param agent    the agent to choose the actions with
      * @param training true to run while training. When training, the steps will be recorded
-     * @return the total reward
+     * @return the replayMemory
      */
-    default float runEnvironment(RlAgent agent, boolean training){
-        // obtain init state
-        float totalReward = 0;
-        reset();
-
-        // run the game
-        while (true) {
-            NDList action = agent.chooseAction(this, training);
-            step(action, training);
-
-//            return step.getReward().getFloat();
-//            totalReward += step.getReward().getFloat();
-//            if (step.isDone()) {
-//                return totalReward;
-//            }
-        }
-    }
+    Step[] runEnvironment(RlAgent agent, boolean training);
 
     /**
      * Returns a batch of steps from the environment {@link ai.djl.modality.rl.ReplayBuffer}.

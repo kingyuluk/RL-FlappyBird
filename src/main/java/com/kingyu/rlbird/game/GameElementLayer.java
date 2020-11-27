@@ -1,21 +1,20 @@
-package com.kingyu.rlflappybird.game;
+package com.kingyu.rlbird.game;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.kingyu.rlflappybird.util.Constant;
-import com.kingyu.rlflappybird.util.GameUtil;
+import com.kingyu.rlbird.util.Constant;
+import com.kingyu.rlbird.util.GameUtil;
 
 /**
- * 游戏元素层
+ * 游戏元素层，水管的生成方法
  *
  * @author Kingyu
  */
 
 public class GameElementLayer {
     private final List<Pipe> pipes; // 水管的容器
-
     public GameElementLayer() {
         pipes = new ArrayList<>();
     }
@@ -53,11 +52,11 @@ public class GameElementLayer {
             // 若容器为空，则添加一对水管
             int topHeight = GameUtil.getRandomNumber(MIN_HEIGHT, MAX_HEIGHT + 1); // 随机生成水管高度
 
-            Pipe top = PipePool.get("Pipe");
+            Pipe top = PipePool.get();
             top.setAttribute(Constant.FRAME_WIDTH, -Pipe.TOP_PIPE_LENGTHENING,
                     topHeight + Pipe.TOP_PIPE_LENGTHENING, Pipe.TYPE_TOP_NORMAL, true);
 
-            Pipe bottom = PipePool.get("Pipe");
+            Pipe bottom = PipePool.get();
             bottom.setAttribute(Constant.FRAME_WIDTH, topHeight + VERTICAL_INTERVAL,
                     Constant.FRAME_HEIGHT - topHeight - VERTICAL_INTERVAL, Pipe.TYPE_BOTTOM_NORMAL, true);
 
@@ -71,7 +70,7 @@ public class GameElementLayer {
             if (pipes.size() >= PipePool.FULL_PIPE
                     && currentDistance <= 265
                     && currentDistance > 260) {
-                Game.setCurrentReward(1f);
+                Game.setCurrentReward(0.8f);
             }
             if (pipes.size() >= PipePool.FULL_PIPE
                     && currentDistance <= SCORE_DISTANCE
@@ -93,13 +92,11 @@ public class GameElementLayer {
         int topHeight = GameUtil.getRandomNumber(MIN_HEIGHT, MAX_HEIGHT + 1); // 随机生成水管高度
         int x = lastPipe.getX() + HORIZONTAL_INTERVAL; // 新水管的x坐标 = 最后一对水管的x坐标 + 水管的间隔
 
-        Pipe top = PipePool.get("Pipe"); // 从水管对象池中获取对象
-
-        // 设置x, y, height, type属性
+        Pipe top = PipePool.get();
         top.setAttribute(x, -Pipe.TOP_PIPE_LENGTHENING, topHeight + Pipe.TOP_PIPE_LENGTHENING,
                 Pipe.TYPE_TOP_NORMAL, true);
 
-        Pipe bottom = PipePool.get("Pipe");
+        Pipe bottom = PipePool.get();
         bottom.setAttribute(x, topHeight + VERTICAL_INTERVAL, Constant.FRAME_HEIGHT - topHeight - VERTICAL_INTERVAL,
                 Pipe.TYPE_BOTTOM_NORMAL, true);
 
@@ -110,14 +107,14 @@ public class GameElementLayer {
     /**
      * 判断元素和小鸟是否发生碰撞
      *
-     * @param bird 小鸟对象
+     * @param bird bird
      */
     public void isCollideBird(Bird bird) {
         if (bird.isDead()) {
             return;
         }
         for (Pipe pipe : pipes) {
-            if (pipe.getPipeRect().intersects(bird.getBirdRect())) {
+            if (pipe.getPipeCollisionRect().intersects(bird.getBirdCollisionRect())) {
                 bird.die();
                 return;
             }

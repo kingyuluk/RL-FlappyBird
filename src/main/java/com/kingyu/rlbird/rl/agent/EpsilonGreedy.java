@@ -10,12 +10,14 @@
  * OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package com.kingyu.rlflappybird.rl.agent;
+package com.kingyu.rlbird.rl.agent;
 
-import com.kingyu.rlflappybird.rl.env.RlEnv;
+import com.kingyu.rlbird.rl.env.RlEnv;
 import ai.djl.ndarray.NDList;
 import ai.djl.training.tracker.Tracker;
 import ai.djl.util.RandomUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link ai.djl.modality.rl.agent.EpsilonGreedy} is a simple exploration/excitation agent.
@@ -46,21 +48,17 @@ public class EpsilonGreedy implements RlAgent {
         this.exploreRate = exploreRate;
     }
 
+    private static final Logger logger = LoggerFactory.getLogger(EpsilonGreedy.class);
+
     /**
      * {@inheritDoc}
      */
     @Override
     public NDList chooseAction(RlEnv env, boolean training) {
-//        NDManager manager = NDManager.newBaseManager();
-//        NDList doNothing = new NDList(manager.create(new int[]{1, 0}));
-//        int FRAME_PER_ACTION = 1;
-//        if (GameFrame.getTimeStep() % FRAME_PER_ACTION == 0) {
         if (training && RandomUtils.random() < exploreRate.getNewValue(counter++)) {
-            System.out.println("***********RANDOM ACTION***********");
+            logger.info("***********RANDOM ACTION***********");
             return env.getActionSpace().randomAction();
         } else return baseAgent.chooseAction(env, training);
-//        } else
-//            return doNothing;
     }
 
     /**

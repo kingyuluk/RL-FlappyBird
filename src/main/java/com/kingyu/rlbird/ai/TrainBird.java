@@ -1,13 +1,13 @@
-package com.kingyu.rlflappybird.ai;
+package com.kingyu.rlbird.ai;
 
 import ai.djl.MalformedModelException;
 import ai.djl.Model;
 import ai.djl.training.evaluator.Accuracy;
 import ai.djl.training.initializer.NormalInitializer;
 import ai.djl.training.optimizer.Adam;
-import com.kingyu.rlflappybird.rl.agent.EpsilonGreedy;
-import com.kingyu.rlflappybird.rl.agent.QAgent;
-import com.kingyu.rlflappybird.rl.agent.RlAgent;
+import com.kingyu.rlbird.rl.agent.EpsilonGreedy;
+import com.kingyu.rlbird.rl.agent.QAgent;
+import com.kingyu.rlbird.rl.agent.RlAgent;
 import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.nn.Activation;
@@ -21,9 +21,9 @@ import ai.djl.training.listener.TrainingListener;
 import ai.djl.training.loss.Loss;
 import ai.djl.training.tracker.LinearTracker;
 import ai.djl.training.tracker.Tracker;
-import com.kingyu.rlflappybird.game.Game;
-import com.kingyu.rlflappybird.rl.env.RlEnv;
-import com.kingyu.rlflappybird.util.Arguments;
+import com.kingyu.rlbird.game.Game;
+import com.kingyu.rlbird.rl.env.RlEnv;
+import com.kingyu.rlbird.util.Arguments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,10 +55,10 @@ public class TrainBird {
         int batchSize = 32;  // size of mini batch
         int replayBufferSize = 50000; // number of previous transitions to remember;
         float rewardDiscount = 0.9f;  // decay rate of past observations
-        float INITIAL_EPSILON = 0.1f;
+        float INITIAL_EPSILON = 0.01f;
         float FINAL_EPSILON = 0.0001f;
         String modelParamsPath = "model";
-        String modelFileName = "dqn-10000";
+        String modelParamsName = "dqn-80000";
 
         Game game = new Game(NDManager.newBaseManager(), batchSize, replayBufferSize, gameMode);
 
@@ -67,15 +67,16 @@ public class TrainBird {
         try (Model model = Model.newInstance("QNetwork")) {
             model.setBlock(block);
 
-            File file = new File("modelParamsPath" + "modelFileName");
+            File file = new File(modelParamsPath + "/"+  modelParamsName + "-0000.params");
             if (file.exists()) {
                 try {
-                    model.load(Paths.get(modelParamsPath), "modelFileName");
+                    model.load(Paths.get(modelParamsPath), modelParamsName);
+                    logger.info("Success load model");
                 } catch (MalformedModelException | IOException e) {
                     e.printStackTrace();
                 }
             } else {
-                System.out.println("Model doesn't exist");
+                logger.info("Model doesn't exist");
             }
 
             DefaultTrainingConfig config = setupTrainingConfig();
@@ -100,8 +101,7 @@ public class TrainBird {
                 ExecutorService executorService = Executors.newFixedThreadPool(numOfThreads);
                 try {
                     try {
-                        List<Future<Object>> futures;
-                        futures = new ArrayList<>();
+                        List<Future<Object>> futures = new ArrayList<>();
                         for (Callable<Object> callable : callables) {
                             futures.add(executorService.submit(callable));
                         }
@@ -168,7 +168,7 @@ public class TrainBird {
         @Override
         public Object call() throws Exception {
             while (Game.trainStep < EXPLORE) {
-                batchSteps = game.runEnv(agent, true);
+                batchSteps = game.runEnvironment(agent, true);
             }
             return null;
         }
@@ -176,6 +176,7 @@ public class TrainBird {
 
 
     public static SequentialBlock getBlock() {
+        // conv -> conv -> conv -> fc -> fc
         return new SequentialBlock()
                 .add(Conv2d.builder()
                         .setKernelShape(new Shape(8, 8))

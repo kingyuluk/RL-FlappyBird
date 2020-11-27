@@ -1,8 +1,8 @@
-package com.kingyu.rlflappybird.util;
+package com.kingyu.rlbird.util;
 
 import ai.djl.Device;
 
-import com.kingyu.rlflappybird.game.Game;
+import com.kingyu.rlbird.game.Game;
 import org.apache.commons.cli.*;
 
 public class Arguments {

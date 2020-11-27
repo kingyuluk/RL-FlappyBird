@@ -11,10 +11,5 @@
  * and limitations under the License.
  */
 
-/**
- * Contains agents to learn using reinforcement learning.
- *
- * <p>It has the main interface {@link ai.djl.modality.rl.agent.RlAgent} and various agents
- * implementing it.
- */
-package com.kingyu.rlflappybird.rl.agent;
+/** Contains utility classes for reinforcement learning. */
+package com.kingyu.rlbird.rl;

@@ -1,10 +1,10 @@
-package com.kingyu.rlflappybird.game;
+package com.kingyu.rlbird.game;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-import com.kingyu.rlflappybird.util.Constant;
-import com.kingyu.rlflappybird.util.GameUtil;
+import com.kingyu.rlbird.util.Constant;
+import com.kingyu.rlbird.util.GameUtil;
 
 /**
  * 水管类
@@ -12,9 +12,9 @@ import com.kingyu.rlflappybird.util.GameUtil;
  * @author Kingyu
  */
 public class Pipe {
-    static BufferedImage[] images; // 水管的图片，static保证图片只加载一次
+    static BufferedImage[] images; 
 
-    static {// 静态代码块，类加载的时候，初始化图片
+    static {
         final int PIPE_IMAGE_COUNT = 3;
         images = new BufferedImage[PIPE_IMAGE_COUNT];
         for (int i = 0; i < PIPE_IMAGE_COUNT; i++) {
@@ -36,19 +36,15 @@ public class Pipe {
     // 水管的类型
     int type;
     public static final int TYPE_TOP_NORMAL = 0;
-    public static final int TYPE_TOP_HARD = 1;
-    public static final int TYPE_BOTTOM_NORMAL = 2;
-    public static final int TYPE_BOTTOM_HARD = 3;
-    public static final int TYPE_HOVER_NORMAL = 4;
-    public static final int TYPE_HOVER_HARD = 5;
+    public static final int TYPE_BOTTOM_NORMAL = 1;
     private final int velocity;
-    Rectangle pipeRect; // 水管的碰撞矩形
+    Rectangle pipeCollisionRect;
 
     public Pipe() {
         this.velocity = Constant.GAME_SPEED;
         this.width = PIPE_WIDTH;
-        pipeRect = new Rectangle();
-        pipeRect.width = PIPE_WIDTH;
+        pipeCollisionRect = new Rectangle();
+        pipeCollisionRect.width = PIPE_WIDTH;
     }
 
     /**
@@ -73,24 +69,20 @@ public class Pipe {
      * 设置碰撞矩形参数
      */
     public void setRectangle(int x, int y, int height) {
-        pipeRect.x = x;
-        pipeRect.y = y;
-        pipeRect.height = height;
+        pipeCollisionRect.x = x;
+        pipeCollisionRect.y = y;
+        pipeCollisionRect.height = height;
     }
 
     public void draw(Graphics g, Bird bird) {
-        switch (type) {
+        switch (this.type) {
             case TYPE_TOP_NORMAL:
                 drawTopNormal(g);
                 break;
             case TYPE_BOTTOM_NORMAL:
                 drawBottomNormal(g);
                 break;
-            case TYPE_HOVER_NORMAL:
-                drawHoverNormal(g);
-                break;
         }
-        //鸟死后水管停止移动
         if (bird.isDead()) {
             return;
         }
@@ -129,24 +121,9 @@ public class Pipe {
         g.drawImage(images[2], x - ((PIPE_HEAD_WIDTH - width) >> 1), Constant.FRAME_HEIGHT - height, null);
     }
 
-    // 绘制悬浮的普通水管
-    private void drawHoverNormal(Graphics g) {
-        // 拼接的个数
-        int count = (height - 2 * PIPE_HEAD_HEIGHT) / PIPE_HEIGHT + 1;
-        // 绘制水管的上顶部
-        g.drawImage(images[2], x - ((PIPE_HEAD_WIDTH - width) >> 1), y, null);
-        // 绘制水管的主体
-        for (int i = 0; i < count; i++) {
-            g.drawImage(images[0], x, y + i * PIPE_HEIGHT + PIPE_HEAD_HEIGHT, null);
-        }
-        // 绘制水管的下底部
-        int y = this.y + height - PIPE_HEAD_HEIGHT;
-        g.drawImage(images[1], x - ((PIPE_HEAD_WIDTH - width) >> 1), y, null);
-    }
-
     private void movement() {
         x -= velocity;
-        pipeRect.x -= velocity;
+        pipeCollisionRect.x -= velocity;
         if (x < -1 * PIPE_HEAD_WIDTH) {// 水管完全离开了窗口
             visible = false;
         }
@@ -167,8 +144,8 @@ public class Pipe {
     }
 
     // 获取水管的碰撞矩形
-    public Rectangle getPipeRect() {
-        return pipeRect;
+    public Rectangle getPipeCollisionRect() {
+        return pipeCollisionRect;
     }
 
     // 判断水管是否可见
