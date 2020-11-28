@@ -52,16 +52,17 @@ public class TrainBird {
     public static void train(String[] args) throws ParseException {
         Arguments arguments = Arguments.parseArgs(args);
 
-        int gameMode = arguments.getTrainingMode();  // 0:no ui   1:ui
+        boolean withGraphics = arguments.isWithGraphics();
         int batchSize = arguments.getBatchSize();  // size of mini batch
         String modelParamsPath = "model";
         String modelParamsName = "dqn-latest";
+
         int replayBufferSize = 50000; // number of previous transitions to remember;
         float rewardDiscount = 0.9f;  // decay rate of past observations
         float INITIAL_EPSILON = 0.01f;
         float FINAL_EPSILON = 0.0001f;
 
-        FlappyBird game = new FlappyBird(NDManager.newBaseManager(), batchSize, replayBufferSize, gameMode);
+        FlappyBird game = new FlappyBird(NDManager.newBaseManager(), batchSize, replayBufferSize, withGraphics);
         SequentialBlock block = getBlock();
 
         try (Model model = Model.newInstance("QNetwork")) {
@@ -119,10 +120,8 @@ public class TrainBird {
                     executorService.shutdown();
                 }
 //                while (true) {
-//                    game.runEnv(agent, true);
+//                    game.runEnvironment(agent, true);
 //                }
-//            } catch (CloneNotSupportedException e) {
-//                e.printStackTrace();
 
 ////                 输出神经网络的结构
 //                Shape currentShape = new Shape(1, 4, 80, 80);

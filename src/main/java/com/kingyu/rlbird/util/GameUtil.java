@@ -52,13 +52,6 @@ public class GameUtil {
     }
 
     /**
-     * draw image on (x, y)
-     */
-    public static void drawImage(BufferedImage image, int x, int y, Graphics g) {
-        g.drawImage(image, x, y, null);
-    }
-
-    /**
      * Image preprocess
      *
      * @param observation input BufferedImage

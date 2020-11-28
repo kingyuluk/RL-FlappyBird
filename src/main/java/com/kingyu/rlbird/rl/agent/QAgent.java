@@ -13,6 +13,7 @@
 package com.kingyu.rlbird.rl.agent;
 
 import ai.djl.ndarray.NDArrays;
+import ai.djl.ndarray.NDManager;
 import com.kingyu.rlbird.rl.ActionSpace;
 import com.kingyu.rlbird.rl.env.RlEnv;
 import com.kingyu.rlbird.rl.env.RlEnv.Step;
@@ -57,6 +58,7 @@ public class QAgent implements RlAgent {
         this.trainer = trainer;
         this.rewardDiscount = rewardDiscount;
     }
+
     private static final Logger logger = LoggerFactory.getLogger(QAgent.class);
 
     /**
@@ -76,32 +78,16 @@ public class QAgent implements RlAgent {
      */
     @Override
     public void trainBatch(Step[] batchSteps) {
-        /* Initialize replay memory D to size N
-         * Initialize action-value function Q with random weights
-         * for episode = 1, M do
-         *     Initialize state s_1
-         *     for t = 1, T do
-         *         With probability ϵ select random action a_t
-         *         otherwise select a_t=max_a  Q(s_t,a; θ_i)
-         *         Execute action a_t in emulator and observe r_t and s_(t+1)
-         *         Store transition (s_t,a_t,r_t,s_(t+1)) in D
-         *         Sample a minibatch of transitions (s_j,a_j,r_j,s_(j+1)) from D
-         *         Set y_j:=
-         *             r_j for terminal s_(j+1)
-         *             r_j+γ*max_(a^' )  Q(s_(j+1),a'; θ_i) for non-terminal s_(j+1)
-         *         Perform a gradient step on (y_j-Q(s_j,a_j; θ_i))^2 with respect to θ
-         *     end for
-         * end for
-         **/
         BatchData batchData =
                 new BatchData(null, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
 
+        NDManager manager = NDManager.newBaseManager();
         NDList preObservationBatch = new NDList();
-        Arrays.stream(batchSteps).forEach(step -> preObservationBatch.addAll(step.getPreObservation()));
+        Arrays.stream(batchSteps).forEach(step -> preObservationBatch.addAll(step.getPreObservation(manager)));
         NDList preInput = new NDList(NDArrays.concat(preObservationBatch, 0));
 
         NDList postObservationBatch = new NDList();
-        Arrays.stream(batchSteps).forEach(step -> postObservationBatch.addAll(step.getPreObservation()));
+        Arrays.stream(batchSteps).forEach(step -> postObservationBatch.addAll(step.getPostObservation(manager)));
         NDList postInput = new NDList(NDArrays.concat(postObservationBatch, 0));
 
         NDList actionBatch = new NDList();
@@ -116,21 +102,15 @@ public class QAgent implements RlAgent {
             NDList QReward = trainer.forward(preInput);
             NDList targetQReward = trainer.forward(postInput);
 
-//            NDList _targetQ = new NDList(targetQReward.singletonOrThrow()
-//                    .max(new int[]{1})
-//                    .mul(rewardDiscount)
-//                    .add(rewardInput.singletonOrThrow()));
-
             NDList Q = new NDList(QReward.singletonOrThrow()
                     .mul(actionInput.singletonOrThrow())
                     .sum(new int[]{1}));
 
             NDArray[] targetQValue = new NDArray[batchSteps.length];
             for (int i = 0; i < batchSteps.length; i++) {
-                if (batchSteps[i].isDone()){
+                if (batchSteps[i].isDone()) {
                     targetQValue[i] = batchSteps[i].getReward();
-                }
-                else{
+                } else {
                     targetQValue[i] = targetQReward.singletonOrThrow().get(i)
                             .max()
                             .mul(rewardDiscount)
@@ -147,27 +127,10 @@ public class QAgent implements RlAgent {
             batchData.getPredictions().put(Q.singletonOrThrow().getDevice(), Q);
             this.trainer.step();
         }
-//        trainer.notifyListeners(listener -> listener.onTrainingBatch(trainer, batchData));
-
-
-//            NDList[] Q = new NDList[batchSteps.length];
-//            NDList[] targetQ = new NDList[batchSteps.length];
-//            for (int i = 0; i < batchSteps.length; i++) {
-//                Q[i] = new NDList(QReward.singletonOrThrow().get(i)
-//                        .mul(batchSteps[i].getAction().singletonOrThrow()).sum());
-
-//                if (batchSteps[i].isDone()) {
-//                    targetQ[i] = new NDList(batchSteps[i].getReward());
-//                } else {
-//                    targetQ[i] =
-//                            new NDList(targetQReward.singletonOrThrow().get(i).max()
-//                                    .mul(rewardDiscount).add(batchSteps[i].getReward()));
-//                }
-//                NDArray lossValue = trainer.getLoss().evaluate(targetQ[i], Q[i]);
-//                collector.backward(lossValue);
-//                batchData.getLabels().put(targetQ[i].get(0).getDevice(), targetQ[i]);
-//                batchData.getPredictions().put(Q[i].get(0).getDevice(), Q[i]);
-//                this.trainer.step();
-//            }
+        for (Step step : batchSteps) {
+            step.attachPostStateManager(step.getManager());
+            step.attachPreStateManager(step.getManager());
+        }
+        manager.close();
     }
 }

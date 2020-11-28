@@ -1,4 +1,4 @@
-package com.kingyu.rlbird.game.content;
+package com.kingyu.rlbird.game.component;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;

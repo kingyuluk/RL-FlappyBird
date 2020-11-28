@@ -47,7 +47,5 @@ public class Constant {
     public static final String[] PIPE_IMG_PATH = {"src/main/resources/img/pipe.png", "src/main/resources/img/pipe_top.png",
             "src/main/resources/img/pipe_bottom.png"};
 
-    public static final String TITLE_IMG_PATH = "src/main/resources/img/title.png";
-    public static final String NOTICE_IMG_PATH = "src/main/resources/img/start.png";
     public static final String SCORE_FILE_PATH = "src/main/resources/score"; // 分数文件路径
 }

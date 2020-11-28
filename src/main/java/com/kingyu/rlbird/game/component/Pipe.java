@@ -1,7 +1,9 @@
-package com.kingyu.rlbird.game.content;
+package com.kingyu.rlbird.game.component;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.kingyu.rlbird.util.Constant;
 import com.kingyu.rlbird.util.GameUtil;
@@ -131,8 +133,6 @@ public class Pipe {
 
     /**
      * 判断当前水管是否完全出现在窗口中
-     *
-     * @return 若完全出现则返回true，否则返回false
      */
     public boolean isInFrame() {
         return x + width < Constant.FRAME_WIDTH;
@@ -148,6 +148,45 @@ public class Pipe {
 
     public boolean isVisible() {
         return visible;
+    }
+
+    static class PipePool {
+        private static final List<Pipe> pool = new ArrayList<>();
+
+        // 容器内水管数量 = 窗口可容纳的水管数量+2， 由窗口宽度、水管宽度、水管间距算得
+        public static final int FULL_PIPE = (Constant.FRAME_WIDTH
+                / (Pipe.PIPE_HEAD_WIDTH + GameElementLayer.HORIZONTAL_INTERVAL) + 2) * 2;
+        public static final int MAX_PIPE_COUNT = 30; // 对象池中对象的最大个数
+
+        // 初始化水管容器
+        static {
+            for (int i = 0; i < FULL_PIPE; i++) {
+                pool.add(new Pipe());
+            }
+        }
+
+        /**
+         * 从对象池中获取一个对象
+         *
+         * @return pipe from pipePool
+         */
+        public static Pipe get() {
+            int size = pool.size();
+            if (size > 0) {
+                return pool.remove(size - 1); // 移除并返回最后一个
+            } else {
+                return new Pipe(); // 空对象池，返回一个新对象
+            }
+        }
+
+        /**
+         * 归还对象给容器
+         */
+        public static void giveBack(Pipe pipe) {
+            if (pool.size() < MAX_PIPE_COUNT) {
+                pool.add(pipe);
+            }
+        }
     }
 
 }

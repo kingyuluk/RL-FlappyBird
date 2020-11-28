@@ -1,4 +1,4 @@
-package com.kingyu.rlbird.game.content;
+package com.kingyu.rlbird.game.component;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -6,8 +6,6 @@ import java.awt.image.BufferedImage;
 import com.kingyu.rlbird.game.FlappyBird;
 import com.kingyu.rlbird.util.Constant;
 import com.kingyu.rlbird.util.GameUtil;
-//import org.bird.util.MusicUtil;
-
 
 /**
  * 小鸟类，小鸟的绘制与飞行逻辑都在此类
@@ -70,32 +68,26 @@ public class Bird {
     private int velocity = 0; // bird's velocity along Y, default same as playerFlapped
 
     private void movement() {
-//        keyReleased();
         if (velocity > MAX_VEL_Y)
             velocity -= ACC_Y;
         y = Math.min((y - velocity), BOTTOM_BOUNDARY);
         birdCollisionRect.y = birdCollisionRect.y - velocity;
         if (birdCollisionRect.y < GameElementLayer.MIN_HEIGHT ||
-                birdCollisionRect.y > Constant.FRAME_HEIGHT - GameBackground.GROUND_HEIGHT - GameElementLayer.MIN_HEIGHT) {
+                birdCollisionRect.y > GameElementLayer.MAX_HEIGHT + GameElementLayer.VERTICAL_INTERVAL) {
             FlappyBird.setCurrentReward(0.1f);
         }
         if (birdCollisionRect.y < Constant.WINDOW_BAR_HEIGHT) {
             die();
         }
         if (birdCollisionRect.y >= BOTTOM_BOUNDARY - 10) {
-//                    MusicUtil.playCrash();
             die();
         }
     }
 
     public void birdFlap() {
-//        if (keyIsReleased()) {
-//            keyPressed();
         if (isDead())
             return;
-//            MusicUtil.playFly();
         velocity = ACC_FLAP;
-//        }
     }
 
     public void die() {
@@ -129,18 +121,4 @@ public class Bird {
     public Rectangle getBirdCollisionRect() {
         return birdCollisionRect;
     }
-
-    // private boolean keyRelease = true; // 按键状态
-//
-//    private void keyPressed() {
-//        keyRelease = false;
-//    }
-//
-//    private void keyReleased() {
-//        keyRelease = true;
-//    }
-//
-//    private boolean keyIsReleased() {
-//        return keyRelease;
-//    }
 }
