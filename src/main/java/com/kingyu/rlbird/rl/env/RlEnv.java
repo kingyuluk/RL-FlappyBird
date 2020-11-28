@@ -12,6 +12,7 @@
  */
 package com.kingyu.rlbird.rl.env;
 
+import ai.djl.ndarray.NDManager;
 import com.kingyu.rlbird.rl.ActionSpace;
 import com.kingyu.rlbird.rl.agent.RlAgent;
 import ai.djl.ndarray.NDArray;
@@ -81,8 +82,9 @@ public interface RlEnv extends AutoCloseable {
          * Returns the observation detailing the state before the action.
          *
          * @return the observation detailing the state before the action
+         * @param manager
          */
-        NDList getPreObservation();
+        NDList getPreObservation(NDManager manager);
 
         /**
          * Returns the action taken.
@@ -95,8 +97,15 @@ public interface RlEnv extends AutoCloseable {
          * Returns the observation detailing the state after the action.
          *
          * @return the observation detailing the state after the action
+         * @param manager
          */
-        NDList getPostObservation();
+        NDList getPostObservation(NDManager manager);
+
+        public void attachPostStateManager(NDManager manager);
+
+        public void attachPreStateManager(NDManager manager);
+
+        public NDManager getManager();
 
         /**
          * Returns the available actions after the step.

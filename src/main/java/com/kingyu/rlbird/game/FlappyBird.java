@@ -26,7 +26,6 @@ import static com.kingyu.rlbird.ai.TrainBird.OBSERVE;
 import static com.kingyu.rlbird.util.Constant.*;
 
 /**
- *
  * @author Kingyu
  */
 
@@ -99,12 +98,14 @@ public class FlappyBird extends Frame implements RlEnv {
         NDList action = agent.chooseAction(this, training);
         step(action, training);
         Step[] batchSteps = this.getBatch();
+        if (timeStep % 5000 == 0){
+            this.closeStep();
+        }
         if (timeStep <= OBSERVE) {
             trainState = "observe";
         } else {
             trainState = "explore";
         }
-//        this.currentState = postState.clone();
         timeStep++;
         return batchSteps;
     }
@@ -114,12 +115,10 @@ public class FlappyBird extends Frame implements RlEnv {
      * action[0] == 1 : do nothing
      * action[1] == 1 : flap the bird
      */
-//    int FRAME_PER_ACTION = 1;
     @Override
     public void step(NDList action, boolean training) {
         currentReward = 0.2f;
         currentTerminal = false;
-//        if (timeStep % FRAME_PER_ACTION == 0 && action.singletonOrThrow().getInt(1) == 1) {
         if (action.singletonOrThrow().getInt(1) == 1) {
             bird.birdFlap();
         }
@@ -133,12 +132,9 @@ public class FlappyBird extends Frame implements RlEnv {
             }
         }
 
-//        State preState = new State(postState.getObservation(), currentReward, currentTerminal);
         State preState = new State(currentState.getObservation(), currentReward, currentTerminal);
-//        postState = new State(createObservation(bufImg), currentReward, currentTerminal);
         currentState = new State(createObservation(currentImg), currentReward, currentTerminal);
 
-//        FlappyBirdStep step = new FlappyBirdStep(manager.newSubManager(), preState, postState, action);
         FlappyBirdStep step = new FlappyBirdStep(manager.newSubManager(), preState, currentState, action);
         if (training) {
             replayBuffer.addStep(step);
@@ -178,6 +174,10 @@ public class FlappyBird extends Frame implements RlEnv {
         return replayBuffer.getBatch();
     }
 
+    public void closeStep() {
+        replayBuffer.closeStep();
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -202,7 +202,7 @@ public class FlappyBird extends Frame implements RlEnv {
      * Copy the initial frame image, stack into NDList,
      * then replace the fourth frame with the current frame to ensure that the batch picture is continuous.
      *
-     * @param currentImg  the image of current frame
+     * @param currentImg the image of current frame
      * @return the CNN input
      */
     public NDList createObservation(BufferedImage currentImg) {
@@ -224,17 +224,21 @@ public class FlappyBird extends Frame implements RlEnv {
         }
     }
 
-    static final class FlappyBirdStep implements RlEnv.Step {
+    static final class FlappyBirdStep implements RlEnv.Step, Cloneable {
         private final NDManager manager;
         private final State preState;
         private final State postState;
         private final NDList action;
 
-        private FlappyBirdStep(NDManager manager, State preState, State postState, NDList action) {
+        private FlappyBirdStep(NDManager manager, State preState, State postState, NDList action)  {
             this.manager = manager;
             this.preState = preState;
             this.postState = postState;
             this.action = action;
+        }
+
+        public NDManager getManager() {
+            return this.manager;
         }
 
         /**
@@ -245,13 +249,23 @@ public class FlappyBird extends Frame implements RlEnv {
             return action;
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
-        public NDList getPostObservation() {
-            return postState.getObservation();
+        public NDList getPreObservation(NDManager manager) {
+            return preState.getObservation(manager);
         }
+
+        public NDList getPostObservation(NDManager manager) {
+            return postState.getObservation(manager);
+        }
+
+        public void attachPostStateManager(NDManager manager) {
+            postState.attachManager(manager);
+        }
+
+        public void attachPreStateManager(NDManager manager) {
+            preState.attachManager(manager);
+        }
+
 
         /**
          * {@inheritDoc}
@@ -277,23 +291,24 @@ public class FlappyBird extends Frame implements RlEnv {
             return postState.isTerminal();
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public NDList getPreObservation() {
-            return preState.getObservation();
-        }
+//        /**
+//         * {@inheritDoc}
+//         */
+//        @Override
+//        public NDList getPreObservation() {
+//            return preState.getObservation();
+//        }
 
         /**
          * {@inheritDoc}
          */
         @Override
         public void close() {
+            this.manager.close();
         }
     }
 
-    private static final class State{
+    private static final class State {
         private final NDList observation;
         private final float reward;
         private final boolean terminal;
@@ -306,6 +321,15 @@ public class FlappyBird extends Frame implements RlEnv {
 
         private NDList getObservation() {
             return this.observation;
+        }
+
+        private NDList getObservation(NDManager manager) {
+            observation.attach(manager);
+            return this.observation;
+        }
+
+        private void attachManager(NDManager manager) {
+            observation.attach(manager);
         }
 
         private ActionSpace getActionSpace(NDManager manager) {
@@ -323,12 +347,6 @@ public class FlappyBird extends Frame implements RlEnv {
             return terminal;
         }
 
-//        @Override
-//        public State clone() throws CloneNotSupportedException {
-//            State cloned = (State) super.clone();
-//            cloned.observation = (NDList) this.observation.clone();
-//            return cloned;
-//        }
     }
 
     /**
@@ -345,12 +363,11 @@ public class FlappyBird extends Frame implements RlEnv {
      * Initialize the game frame
      */
     private void initFrame() {
-        setSize(FRAME_WIDTH, FRAME_HEIGHT); // 设置窗口大小
-        setTitle(GAME_TITLE); // 设置窗口标题
-        setLocation(FRAME_X, FRAME_Y); // 窗口初始位置
-        setResizable(false); // 设置窗口大小不可变
+        setSize(FRAME_WIDTH, FRAME_HEIGHT);
+        setTitle(GAME_TITLE);
+        setLocation(FRAME_X, FRAME_Y);
+        setResizable(false);
         setVisible(true);
-        // 添加关闭窗口事件（监听窗口发生的事件，派发给参数对象，参数对象调用对应的方法）
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -382,10 +399,6 @@ public class FlappyBird extends Frame implements RlEnv {
 
     public static void setTrainingMode(int trainingMode) {
         FlappyBird.trainingMode = trainingMode;
-    }
-
-    public static int getTrainingMode() {
-        return trainingMode;
     }
 
     public String getTrainState() {

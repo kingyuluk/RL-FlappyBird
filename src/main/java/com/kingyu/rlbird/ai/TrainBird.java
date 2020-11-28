@@ -119,10 +119,8 @@ public class TrainBird {
                     executorService.shutdown();
                 }
 //                while (true) {
-//                    game.runEnv(agent, true);
+//                    game.runEnvironment(agent, true);
 //                }
-//            } catch (CloneNotSupportedException e) {
-//                e.printStackTrace();
 
 ////                 输出神经网络的结构
 //                Shape currentShape = new Shape(1, 4, 80, 80);
