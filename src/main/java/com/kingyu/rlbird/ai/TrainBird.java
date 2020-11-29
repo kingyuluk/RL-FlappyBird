@@ -24,6 +24,7 @@ import ai.djl.training.tracker.Tracker;
 import com.kingyu.rlbird.game.FlappyBird;
 import com.kingyu.rlbird.rl.env.RlEnv;
 import com.kingyu.rlbird.util.Arguments;
+import com.kingyu.rlbird.util.Constant;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,8 +39,9 @@ import java.util.concurrent.*;
 public class TrainBird {
     private static final Logger logger = LoggerFactory.getLogger(TrainBird.class);
 
-    public final static int OBSERVE = 1000; // timeSteps to observe before training
+    public final static int OBSERVE = 1000; // gameSteps to observe before training
     public final static int EXPLORE = 3000000; // frames over which to anneal epsilon
+    public final static int SAVE_EVERY_STEPS = 100000; // save model every 100,000 step
     static RlEnv.Step[] batchSteps;
 
     private TrainBird() {
@@ -51,11 +53,11 @@ public class TrainBird {
 
     public static void train(String[] args) throws ParseException {
         Arguments arguments = Arguments.parseArgs(args);
-
-        boolean withGraphics = arguments.isWithGraphics();
+        boolean withGraphics = arguments.withGraphics();
+        boolean training = !arguments.isTesting();
         int batchSize = arguments.getBatchSize();  // size of mini batch
-        String modelParamsPath = "model";
-        String modelParamsName = "dqn-latest";
+        String modelParamsPath = Constant.MODEL_PATH;
+        String modelParamsName = "dqn-trained";
 
         int replayBufferSize = 50000; // number of previous transitions to remember;
         float rewardDiscount = 0.9f;  // decay rate of past observations
@@ -68,8 +70,8 @@ public class TrainBird {
         try (Model model = Model.newInstance("QNetwork")) {
             model.setBlock(block);
 
-            if(arguments.isPreTrained()) {
-            File file = new File(modelParamsPath + "/" + modelParamsName + "-0000.params");
+            if (arguments.isPreTrained()) {
+                File file = new File(modelParamsPath + "/" + modelParamsName + "-0000.params");
                 if (file.exists()) {
                     try {
                         model.load(Paths.get(modelParamsPath), modelParamsName);
@@ -80,7 +82,7 @@ public class TrainBird {
                 } else {
                     logger.info("Model doesn't exist");
                 }
-            }else{
+            } else {
                 logger.info("Start training");
             }
 
@@ -101,8 +103,10 @@ public class TrainBird {
 
                 int numOfThreads = 2;
                 List<Callable<Object>> callables = new ArrayList<>(numOfThreads);
-                callables.add(new GeneratorCallable(game, agent));
-                callables.add(new TrainerCallable(model, agent));
+                callables.add(new GeneratorCallable(game, agent, training));
+                if(training) {
+                    callables.add(new TrainerCallable(model, agent));
+                }
                 ExecutorService executorService = Executors.newFixedThreadPool(numOfThreads);
                 try {
                     try {
@@ -119,17 +123,6 @@ public class TrainBird {
                 } finally {
                     executorService.shutdown();
                 }
-//                while (true) {
-//                    game.runEnvironment(agent, true);
-//                }
-
-////                 输出神经网络的结构
-//                Shape currentShape = new Shape(1, 4, 80, 80);
-//                for (int i = 0; i < block.getChildren().size(); i++) {
-//                    Shape[] newShape = block.getChildren().get(i).getValue().getOutputShapes(NDManager.newBaseManager(), new Shape[]{currentShape});
-//                    currentShape = newShape[0];
-//                    System.out.println(block.getChildren().get(i).getKey() + " layer output : " + currentShape);
-//                }
             }
         }
     }
@@ -147,11 +140,11 @@ public class TrainBird {
         public Object call() throws Exception {
             while (FlappyBird.trainStep < EXPLORE) {
                 Thread.sleep(0);
-                if (FlappyBird.timeStep > OBSERVE) {
+                if (FlappyBird.gameStep > OBSERVE) {
                     this.agent.trainBatch(batchSteps);
                     FlappyBird.trainStep++;
-                    if (FlappyBird.trainStep > 0 && FlappyBird.trainStep % 100000 == 0) {
-                        model.save(Paths.get("model"), "dqn-" + FlappyBird.trainStep);
+                    if (FlappyBird.trainStep > 0 && FlappyBird.trainStep % SAVE_EVERY_STEPS == 0) {
+                        model.save(Paths.get(Constant.MODEL_PATH), "dqn-" + FlappyBird.trainStep);
                     }
                 }
             }
@@ -162,16 +155,18 @@ public class TrainBird {
     private static class GeneratorCallable implements Callable<Object> {
         private final FlappyBird game;
         private final RlAgent agent;
+        private final boolean training;
 
-        public GeneratorCallable(FlappyBird game, RlAgent agent) {
+        public GeneratorCallable(FlappyBird game, RlAgent agent, boolean training) {
             this.game = game;
             this.agent = agent;
+            this.training = training;
         }
 
         @Override
         public Object call() {
             while (FlappyBird.trainStep < EXPLORE) {
-                batchSteps = game.runEnvironment(agent, true);
+                batchSteps = game.runEnvironment(agent, training);
             }
             return null;
         }
@@ -210,41 +205,6 @@ public class TrainBird {
                         .builder()
                         .setUnits(2).build());
     }
-
-//    public static SequentialBlock _getBlock() {
-//        return new SequentialBlock()
-//                .add(Conv2d.builder()
-//                        .setKernelShape(new Shape(8, 8))
-//                        .optStride(new Shape(4, 4))
-//                        .optPadding(new Shape(3, 3))
-//                        .setFilters(32).build())
-//                .add(Pool.maxPool2dBlock(new Shape(2, 2)))
-//                .add(Activation::relu)
-//
-//                .add(Conv2d.builder()
-//                        .setKernelShape(new Shape(4, 4))
-//                        .optStride(new Shape(2, 2))
-//                        .optPadding(new Shape(1, 1))
-//                        .setFilters(64).build())
-//                .add(Activation::relu)
-//
-//                .add(Conv2d.builder()
-//                        .setKernelShape(new Shape(3, 3))
-//                        .optStride(new Shape(1, 1))
-//                        .optPadding(new Shape(1, 1))
-//                        .setFilters(64).build())
-//                .add(Activation::relu)
-//
-//                .add(Blocks.batchFlattenBlock())
-//                .add(Linear
-//                        .builder()
-//                        .setUnits(512).build())
-//                .add(Activation::relu)
-//
-//                .add(Linear
-//                        .builder()
-//                        .setUnits(2).build());
-//    }
 
     public static DefaultTrainingConfig setupTrainingConfig() {
         return new DefaultTrainingConfig(Loss.l2Loss())

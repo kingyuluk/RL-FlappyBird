@@ -47,7 +47,6 @@ public interface RlEnv extends AutoCloseable {
      *
      * @param action   the action to perform
      * @param training true if the step is during training
-     * @return the {@link Step} with the result of the action
      */
     void step(NDList action, boolean training);
 
@@ -79,10 +78,10 @@ public interface RlEnv extends AutoCloseable {
     interface Step extends AutoCloseable {
 
         /**
-         * Returns the observation detailing the state before the action.
+         * Returns the observation detailing the state before the action which attach the preState to temporary manager.
          *
          * @return the observation detailing the state before the action
-         * @param manager
+         * @param manager temporary manager
          */
         NDList getPreObservation(NDManager manager);
 
@@ -94,25 +93,33 @@ public interface RlEnv extends AutoCloseable {
         NDList getAction();
 
         /**
-         * Returns the observation detailing the state after the action.
+         * Returns the observation detailing the state after the action which attach the preState to temporary manager.
          *
          * @return the observation detailing the state after the action
-         * @param manager
+         * @param manager temporary manager
          */
         NDList getPostObservation(NDManager manager);
 
-        public void attachPostStateManager(NDManager manager);
-
-        public void attachPreStateManager(NDManager manager);
-
-        public NDManager getManager();
+        /**
+         * attach the postState to temporary manager.
+         * @param manager temporary manager
+         */
+        void attachPostStateManager(NDManager manager);
 
         /**
-         * Returns the available actions after the step.
+         * Attach the preState to temporary manager.
          *
-         * @return the available actions after the step
+         * @param manager temporary manager
          */
-        ActionSpace getPostActionSpace();
+        void attachPreStateManager(NDManager manager);
+
+        /**
+         * Returns the manager which manage step.
+         *
+         * @return the manager which manage step
+         */
+        NDManager getManager();
+
 
         /**
          * Returns the reward given for the action.

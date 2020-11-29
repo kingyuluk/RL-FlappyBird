@@ -58,7 +58,7 @@ public class FlappyBird extends Frame implements RlEnv {
         this(manager, new LruReplayBuffer(batchSize, replayBufferSize));
         this.withGraphics = withGraphics;
         if (this.withGraphics) {
-            initFrame(); // 初始化游戏窗口
+            initFrame();
             this.setVisible(true);
         }
         background = new GameBackground();
@@ -79,7 +79,7 @@ public class FlappyBird extends Frame implements RlEnv {
         this.currentState = new State(createObservation(currentImg), currentReward, currentTerminal);
     }
 
-    public static int timeStep = 0;
+    public static int gameStep = 0;
     public static int trainStep = 0;
     private static boolean currentTerminal = false;
     private static float currentReward = 0.2f;
@@ -90,19 +90,24 @@ public class FlappyBird extends Frame implements RlEnv {
      */
     @Override
     public Step[] runEnvironment(RlAgent agent, boolean training) {
+        Step[] batchSteps = new Step[0];
+        reset();
+
         // run the game
         NDList action = agent.chooseAction(this, training);
         step(action, training);
-        Step[] batchSteps = this.getBatch();
-        if (timeStep % 5000 == 0){
+        if(training) {
+            batchSteps = this.getBatch();
+        }
+        if (gameStep % 5000 == 0){
             this.closeStep();
         }
-        if (timeStep <= OBSERVE) {
+        if (gameStep <= OBSERVE) {
             trainState = "observe";
         } else {
             trainState = "explore";
         }
-        timeStep++;
+        gameStep++;
         return batchSteps;
     }
 
@@ -113,8 +118,8 @@ public class FlappyBird extends Frame implements RlEnv {
      */
     @Override
     public void step(NDList action, boolean training) {
-        currentReward = 0.2f;
-        currentTerminal = false;
+//        currentReward = 0.2f;
+//        currentTerminal = false;
         if (action.singletonOrThrow().getInt(1) == 1) {
             bird.birdFlap();
         }
@@ -135,7 +140,7 @@ public class FlappyBird extends Frame implements RlEnv {
         if (training) {
             replayBuffer.addStep(step);
         }
-        logger.info("TIME_STEP " + timeStep +
+        logger.info("GAME_STEP " + gameStep +
                 " / " + "TRAIN_STEP " + trainStep +
                 " / " + getTrainState() +
                 " / " + "ACTION " + (Arrays.toString(action.singletonOrThrow().toArray())) +
@@ -245,30 +250,36 @@ public class FlappyBird extends Frame implements RlEnv {
             return action;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public NDList getPreObservation(NDManager manager) {
             return preState.getObservation(manager);
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
         public NDList getPostObservation(NDManager manager) {
             return postState.getObservation(manager);
         }
-
-        public void attachPostStateManager(NDManager manager) {
-            postState.attachManager(manager);
-        }
-
-        public void attachPreStateManager(NDManager manager) {
-            preState.attachManager(manager);
-        }
-
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public ActionSpace getPostActionSpace() {
-            return postState.getActionSpace(manager);
+        public void attachPostStateManager(NDManager manager) {
+            postState.attachManager(manager);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void attachPreStateManager(NDManager manager) {
+            preState.attachManager(manager);
         }
 
         /**

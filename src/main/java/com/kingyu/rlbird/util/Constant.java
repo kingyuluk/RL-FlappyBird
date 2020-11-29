@@ -1,7 +1,6 @@
 package com.kingyu.rlbird.util;
 
 import java.awt.Color;
-import java.awt.Font;
 
 /**
  * 常量类
@@ -48,4 +47,7 @@ public class Constant {
             "src/main/resources/img/pipe_bottom.png"};
 
     public static final String SCORE_FILE_PATH = "src/main/resources/score"; // 分数文件路径
+
+    public static final String MODEL_PATH = "src/main/resources/model";
+
 }
