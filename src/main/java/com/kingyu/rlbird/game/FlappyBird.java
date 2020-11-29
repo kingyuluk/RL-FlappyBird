@@ -354,9 +354,9 @@ public class FlappyBird extends Frame implements RlEnv {
         Graphics bufG = currentImg.getGraphics();
         bufG.setColor(Constant.BG_COLOR);
         bufG.fillRect(0, 0, Constant.FRAME_WIDTH, Constant.FRAME_HEIGHT);
-        ground.draw(bufG, bird);
         bird.draw(bufG);
         gameElement.draw(bufG, bird);
+        ground.draw(bufG, bird);
     }
 
     /**

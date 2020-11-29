@@ -7,7 +7,6 @@ import java.util.List;
 import com.kingyu.rlbird.game.FlappyBird;
 import com.kingyu.rlbird.util.Constant;
 import com.kingyu.rlbird.util.GameUtil;
-import com.kingyu.rlbird.game.component.Pipe.PipePool;
 
 /**
  * 游戏元素层，水管的生成方法
@@ -17,6 +16,7 @@ import com.kingyu.rlbird.game.component.Pipe.PipePool;
 
 public class GameElementLayer {
     private final List<Pipe> pipes; // 水管的容器
+
     public GameElementLayer() {
         pipes = new ArrayList<>();
     }
@@ -54,11 +54,11 @@ public class GameElementLayer {
             // 若容器为空，则添加一对水管
             int topHeight = GameUtil.getRandomNumber(MIN_HEIGHT, MAX_HEIGHT + 1); // 随机生成水管高度
 
-            Pipe top = PipePool.get();
+            Pipe top = PipePool.get("Pipe");
             top.setAttribute(Constant.FRAME_WIDTH, -Pipe.TOP_PIPE_LENGTHENING,
                     topHeight + Pipe.TOP_PIPE_LENGTHENING, Pipe.TYPE_TOP_NORMAL, true);
 
-            Pipe bottom = PipePool.get();
+            Pipe bottom = PipePool.get("Pipe");
             bottom.setAttribute(Constant.FRAME_WIDTH, topHeight + VERTICAL_INTERVAL,
                     Constant.FRAME_HEIGHT - topHeight - VERTICAL_INTERVAL, Pipe.TYPE_BOTTOM_NORMAL, true);
 
@@ -80,7 +80,15 @@ public class GameElementLayer {
                 ScoreCounter.getInstance().score(bird);
             }
             if (lastPipe.isInFrame()) {
-                addNormalPipe(lastPipe);
+                try {
+                    if (GameUtil.isInProbability(1, 2)) {
+                        addMovingNormalPipe(lastPipe);
+                    } else {
+                        addNormalPipe(lastPipe);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -94,13 +102,34 @@ public class GameElementLayer {
         int topHeight = GameUtil.getRandomNumber(MIN_HEIGHT, MAX_HEIGHT + 1); // 随机生成水管高度
         int x = lastPipe.getX() + HORIZONTAL_INTERVAL; // 新水管的x坐标 = 最后一对水管的x坐标 + 水管的间隔
 
-        Pipe top = PipePool.get();
+        Pipe top = PipePool.get("Pipe");
         top.setAttribute(x, -Pipe.TOP_PIPE_LENGTHENING, topHeight + Pipe.TOP_PIPE_LENGTHENING,
                 Pipe.TYPE_TOP_NORMAL, true);
 
-        Pipe bottom = PipePool.get();
+        Pipe bottom = PipePool.get("Pipe");
         bottom.setAttribute(x, topHeight + VERTICAL_INTERVAL, Constant.FRAME_HEIGHT - topHeight - VERTICAL_INTERVAL,
                 Pipe.TYPE_BOTTOM_NORMAL, true);
+
+        pipes.add(top);
+        pipes.add(bottom);
+    }
+
+    /**
+     * 添加移动的普通水管
+     *
+     * @param lastPipe 传入最后一根水管以获取x坐标
+     */
+    private void addMovingNormalPipe(Pipe lastPipe) {
+        int topHeight = GameUtil.getRandomNumber(MIN_HEIGHT, MAX_HEIGHT + 1); // 随机生成水管高度
+        int x = lastPipe.getX() + HORIZONTAL_INTERVAL; // 新水管的x坐标 = 最后一对水管的x坐标 + 水管的间隔
+
+        Pipe top = PipePool.get("MovingPipe");
+        top.setAttribute(x, -Pipe.TOP_PIPE_LENGTHENING, topHeight + Pipe.TOP_PIPE_LENGTHENING,
+                Pipe.TYPE_TOP_HARD, true);
+
+        Pipe bottom = PipePool.get("MovingPipe");
+        bottom.setAttribute(x, topHeight + VERTICAL_INTERVAL, Constant.FRAME_HEIGHT - topHeight - VERTICAL_INTERVAL,
+                Pipe.TYPE_BOTTOM_HARD, true);
 
         pipes.add(top);
         pipes.add(bottom);

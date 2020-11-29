@@ -2,8 +2,6 @@ package com.kingyu.rlbird.game.component;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.kingyu.rlbird.util.Constant;
 import com.kingyu.rlbird.util.GameUtil;
@@ -14,7 +12,7 @@ import com.kingyu.rlbird.util.GameUtil;
  * @author Kingyu
  */
 public class Pipe {
-    static BufferedImage[] images; 
+    static BufferedImage[] images;
 
     static {
         final int PIPE_IMAGE_COUNT = 3;
@@ -30,17 +28,19 @@ public class Pipe {
     public static final int PIPE_HEAD_WIDTH = images[1].getWidth();
     public static final int PIPE_HEAD_HEIGHT = images[1].getHeight();
 
-    private int x, y; // 水管相对于元素层的坐标
-    private final int width; // 水管的宽度
-    private int height; // 水管的高度
+    protected int x, y; // 水管相对于元素层的坐标
+    protected final int width; // 水管的宽度
+    protected int height; // 水管的高度
+    protected final int velocity;
+    protected Rectangle pipeCollisionRect;
 
-    boolean visible; // 水管可见状态，true为可见，false表示可归还至对象池
+    protected boolean visible; // 水管可见状态，true为可见，false表示可归还至对象池
     // 水管的类型
     int type;
     public static final int TYPE_TOP_NORMAL = 0;
-    public static final int TYPE_BOTTOM_NORMAL = 1;
-    private final int velocity;
-    Rectangle pipeCollisionRect;
+    public static final int TYPE_TOP_HARD = 1;
+    public static final int TYPE_BOTTOM_NORMAL = 2;
+    public static final int TYPE_BOTTOM_HARD = 3;
 
     public Pipe() {
         this.velocity = Constant.GAME_SPEED;
@@ -52,7 +52,7 @@ public class Pipe {
     /**
      * 设置水管参数
      *
-     * @param x: x坐标
+     * @param x:            x坐标
      * @param y：y坐标
      * @param height：水管高度
      * @param type：水管类型
@@ -148,45 +148,6 @@ public class Pipe {
 
     public boolean isVisible() {
         return visible;
-    }
-
-    static class PipePool {
-        private static final List<Pipe> pool = new ArrayList<>();
-
-        // 容器内水管数量 = 窗口可容纳的水管数量+2， 由窗口宽度、水管宽度、水管间距算得
-        public static final int FULL_PIPE = (Constant.FRAME_WIDTH
-                / (Pipe.PIPE_HEAD_WIDTH + GameElementLayer.HORIZONTAL_INTERVAL) + 2) * 2;
-        public static final int MAX_PIPE_COUNT = 30; // 对象池中对象的最大个数
-
-        // 初始化水管容器
-        static {
-            for (int i = 0; i < FULL_PIPE; i++) {
-                pool.add(new Pipe());
-            }
-        }
-
-        /**
-         * 从对象池中获取一个对象
-         *
-         * @return pipe from pipePool
-         */
-        public static Pipe get() {
-            int size = pool.size();
-            if (size > 0) {
-                return pool.remove(size - 1); // 移除并返回最后一个
-            } else {
-                return new Pipe(); // 空对象池，返回一个新对象
-            }
-        }
-
-        /**
-         * 归还对象给容器
-         */
-        public static void giveBack(Pipe pipe) {
-            if (pool.size() < MAX_PIPE_COUNT) {
-                pool.add(pipe);
-            }
-        }
     }
 
 }

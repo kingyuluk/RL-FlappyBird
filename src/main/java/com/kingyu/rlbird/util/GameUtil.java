@@ -49,6 +49,26 @@ public class GameUtil {
     }
 
     /**
+     * 判断任意概率的概率性事件是否发生
+     *
+     * @param numerator   分子，不小于0的值
+     * @param denominator 分母，不小于0的值
+     * @return 概率性事件发生返回true，否则返回false
+     */
+    public static boolean isInProbability(int numerator, int denominator) throws Exception {
+        // 分子分母不小于0
+        if (numerator <= 0 || denominator <= 0) {
+            throw new Exception("传入了非法的参数");
+        }
+        //分子大于分母，一定发生
+        if (numerator >= denominator) {
+            return true;
+        }
+
+        return getRandomNumber(1, denominator + 1) <= numerator;
+    }
+
+    /**
      * Image preprocess
      *
      * @param observation input BufferedImage
