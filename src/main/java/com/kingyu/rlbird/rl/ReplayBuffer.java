@@ -29,7 +29,10 @@ public interface ReplayBuffer {
      */
     RlEnv.Step[] getBatch();
 
-    public void closeStep();
+    /**
+     * close the step not pointed to.
+     */
+    void closeStep();
 
     /**
      * Adds a new step to the buffer.

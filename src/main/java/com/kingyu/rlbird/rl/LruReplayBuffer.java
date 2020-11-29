@@ -24,10 +24,8 @@ import java.util.ArrayList;
 public class LruReplayBuffer implements ReplayBuffer {
 
     private final int batchSize;
-    private final int bufferSize;
     private final RlEnv.Step[] steps;
-    //    private RlEnv.Step[] stepToClose;
-    private ArrayList<RlEnv.Step> stepToClose;
+    private final ArrayList<RlEnv.Step> stepToClose;
     private int firstStepIndex;
     private int stepsActualSize;
 
@@ -39,7 +37,6 @@ public class LruReplayBuffer implements ReplayBuffer {
      */
     public LruReplayBuffer(int batchSize, int bufferSize) {
         this.batchSize = batchSize;
-        this.bufferSize = bufferSize;
         steps = new RlEnv.Step[bufferSize];
         stepToClose = new ArrayList<>(bufferSize);
         firstStepIndex = 0;
@@ -61,6 +58,9 @@ public class LruReplayBuffer implements ReplayBuffer {
         return batch;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void closeStep() {
         for (RlEnv.Step step : stepToClose) {
             step.close();

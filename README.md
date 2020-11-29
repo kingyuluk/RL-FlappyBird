@@ -24,9 +24,9 @@ The following command will start to train without graphics:
 mvn exec:java -Dexec.mainClass="com.kingyu.rlbird.ai.TrainBird"
 ```
 
-You can also run with arguments.The following command will run the game with graphics and using the pre-trained weights.
+You can also run with arguments.The following command will test the model with graphics.
 ```
-mvn exec:java -Dexec.mainClass="com.kingyu.rlbird.ai.TrainBird" -Dexec.args="-g -p"  
+mvn exec:java -Dexec.mainClass="com.kingyu.rlbird.ai.TrainBird" -Dexec.args="-g -p -t"  
 ```
 
 | Argument   | Comments                                 |
@@ -34,6 +34,7 @@ mvn exec:java -Dexec.mainClass="com.kingyu.rlbird.ai.TrainBird" -Dexec.args="-g 
  | `-g`       | Training with graphics.                 |
  | `-b`       | Batch size to use for training.         |
  | `-p`       | Use pre-trained weights.                |
+ | `-t`       | Test the trained model.                 |
 
 ## Deep Q-Network Algorithm
 
@@ -58,7 +59,9 @@ end for
 ```
 
 ## Notes
-
+Trained Model
+* It may take 10+ hours to train a bird to a perfect state. You can find the model trained with three million steps in project resource folder: ```src/main/resources/model/dqn-trained-0000-params```
+ 
 Troubleshooting
 
 * [X11 error](https://github.com/aws-samples/d2l-java/blob/master/documentation/troubleshoot.md#1-x11-error-when-running-object-detection-notebooks-on-ec2-instances)

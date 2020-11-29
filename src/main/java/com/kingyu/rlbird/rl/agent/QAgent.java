@@ -81,13 +81,15 @@ public class QAgent implements RlAgent {
         BatchData batchData =
                 new BatchData(null, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
 
-        NDManager manager = NDManager.newBaseManager();
+        // temporary manager for attaching NDArray to reduce the gpu memory usage
+        NDManager temporaryManager = NDManager.newBaseManager();
+
         NDList preObservationBatch = new NDList();
-        Arrays.stream(batchSteps).forEach(step -> preObservationBatch.addAll(step.getPreObservation(manager)));
+        Arrays.stream(batchSteps).forEach(step -> preObservationBatch.addAll(step.getPreObservation(temporaryManager)));
         NDList preInput = new NDList(NDArrays.concat(preObservationBatch, 0));
 
         NDList postObservationBatch = new NDList();
-        Arrays.stream(batchSteps).forEach(step -> postObservationBatch.addAll(step.getPostObservation(manager)));
+        Arrays.stream(batchSteps).forEach(step -> postObservationBatch.addAll(step.getPostObservation(temporaryManager)));
         NDList postInput = new NDList(NDArrays.concat(postObservationBatch, 0));
 
         NDList actionBatch = new NDList();
@@ -131,6 +133,6 @@ public class QAgent implements RlAgent {
             step.attachPostStateManager(step.getManager());
             step.attachPreStateManager(step.getManager());
         }
-        manager.close();
+        temporaryManager.close();  // close the temporary manager
     }
 }

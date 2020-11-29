@@ -6,12 +6,9 @@ import ai.djl.modality.cv.util.NDImageUtils;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDManager;
 
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.awt.font.FontRenderContext;
-import java.awt.geom.AffineTransform;
 
 import javax.imageio.ImageIO;
 

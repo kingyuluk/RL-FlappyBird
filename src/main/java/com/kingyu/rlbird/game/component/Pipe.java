@@ -113,10 +113,10 @@ public class Pipe {
     // 绘制从下往上的普通水管
     private void drawBottomNormal(Graphics g) {
         // 拼接的个数
-        int count = (height - PIPE_HEAD_HEIGHT - GameBackground.GROUND_HEIGHT) / PIPE_HEIGHT + 1;
+        int count = (height - PIPE_HEAD_HEIGHT - Ground.GROUND_HEIGHT) / PIPE_HEIGHT + 1;
         // 绘制水管的主体
         for (int i = 0; i < count; i++) {
-            g.drawImage(images[0], x, Constant.FRAME_HEIGHT - PIPE_HEIGHT - GameBackground.GROUND_HEIGHT - i * PIPE_HEIGHT,
+            g.drawImage(images[0], x, Constant.FRAME_HEIGHT - PIPE_HEIGHT - Ground.GROUND_HEIGHT - i * PIPE_HEIGHT,
                     null);
         }
         // 绘制水管的顶部

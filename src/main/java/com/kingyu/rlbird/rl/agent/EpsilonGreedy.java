@@ -32,9 +32,8 @@ import org.slf4j.LoggerFactory;
  */
 public class EpsilonGreedy implements RlAgent {
 
-    private RlAgent baseAgent;
-    private Tracker exploreRate;
-
+    private final RlAgent baseAgent;
+    private final Tracker exploreRate;
     private int counter;
 
     /**

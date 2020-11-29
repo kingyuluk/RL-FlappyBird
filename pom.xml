@@ -9,7 +9,7 @@
     <version>1.0-SNAPSHOT</version>
 
     <name>RL-FlappyBird</name>
-    <url>https://github.com/kingyuluk/FlappyBird</url>
+    <url>https://github.com/kingyuluk/RL-FlappyBird</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

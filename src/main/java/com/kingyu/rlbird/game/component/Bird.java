@@ -63,7 +63,7 @@ public class Bird {
     public static final int ACC_FLAP = 15; // players speed on flapping
     public static final double ACC_Y = 4; // players downward acceleration
     public static final int MAX_VEL_Y = -25; // max vel along Y, max descend speed
-    public static final int BOTTOM_BOUNDARY = Constant.FRAME_HEIGHT - GameBackground.GROUND_HEIGHT - (BIRD_HEIGHT >> 1);
+    public static final int BOTTOM_BOUNDARY = Constant.FRAME_HEIGHT - Ground.GROUND_HEIGHT - (BIRD_HEIGHT >> 1);
 
     private int velocity = 0; // bird's velocity along Y, default same as playerFlapped
 

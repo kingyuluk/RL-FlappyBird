@@ -5,11 +5,12 @@ import org.apache.commons.cli.*;
 public class Arguments {
 
     private final int batchSize;
-    private final boolean withGraphics;
+    private final boolean graphics;
     private final boolean preTrained;
+    private final boolean testing;
 
     public Arguments(CommandLine cmd) {
-        withGraphics = cmd.hasOption("graphics");
+        graphics = cmd.hasOption("graphics");
 
         if (cmd.hasOption("batch-size")) {
             batchSize = Integer.parseInt(cmd.getOptionValue("batch-size"));
@@ -18,6 +19,8 @@ public class Arguments {
         }
 
         preTrained = cmd.hasOption("pre-trained");
+
+        testing = cmd.hasOption("testing");
     }
 
     public static Arguments parseArgs(String[] args) throws ParseException {
@@ -48,11 +51,17 @@ public class Arguments {
                         .argName("PRE-TRAINED")
                         .desc("Use pre-trained weights")
                         .build());
+        options.addOption(
+                Option.builder("t")
+                        .longOpt("testing")
+                        .argName("TESTING")
+                        .desc("test the trained model")
+                        .build());
         return options;
     }
 
-    public boolean isWithGraphics(){
-        return withGraphics;
+    public boolean withGraphics(){
+        return graphics;
     }
 
     public int getBatchSize() {
@@ -61,5 +70,9 @@ public class Arguments {
 
     public boolean isPreTrained() {
         return preTrained;
+    }
+
+    public boolean isTesting(){
+        return testing;
     }
 }
