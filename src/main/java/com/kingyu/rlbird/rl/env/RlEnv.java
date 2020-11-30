@@ -66,12 +66,19 @@ public interface RlEnv extends AutoCloseable {
     interface Step extends AutoCloseable {
 
         /**
-         * Returns the observation detailing the state before the action which attach the preState to temporary manager.
+         * Returns the observation before the action which attach to manager.
          *
-         * @return the observation detailing the state before the action
-         * @param manager temporary manager
+         * @param manager manager attach to
+         * @return the observation before the action which attach to manager.
          */
         NDList getPreObservation(NDManager manager);
+
+        /**
+         * Returns the observation before the action
+         *
+         * @return the observation before the action
+         */
+        NDList getPreObservation();
 
         /**
          * Returns the action taken.
@@ -81,30 +88,24 @@ public interface RlEnv extends AutoCloseable {
         NDList getAction();
 
         /**
-         * Returns the observation detailing the state after the action which attach the preState to temporary manager.
+         * Returns the observation after the action which attach to manager.
          *
-         * @return the observation detailing the state after the action
-         * @param manager temporary manager
+         * @param manager manager attach to
+         * @return the observation after the action which attach to manager.
          */
         NDList getPostObservation(NDManager manager);
 
         /**
-         * attach the postState to temporary manager.
-         * @param manager temporary manager
+         * Return the observation after the action
+         *
+         * @return @return the observation after the action
          */
-        void attachPostStateManager(NDManager manager);
+        NDList getPostObservation();
 
         /**
-         * Attach the preState to temporary manager.
+         * Returns the manager which manage this step.
          *
-         * @param manager temporary manager
-         */
-        void attachPreStateManager(NDManager manager);
-
-        /**
-         * Returns the manager which manage step.
-         *
-         * @return the manager which manage step
+         * @return the manager which manage this step
          */
         NDManager getManager();
 
@@ -121,7 +122,7 @@ public interface RlEnv extends AutoCloseable {
          *
          * @return true if the environment is finished and can no longer accept further actions.
          */
-        boolean isDone();
+        boolean isTerminal();
 
         /**
          * {@inheritDoc}

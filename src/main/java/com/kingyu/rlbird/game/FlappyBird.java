@@ -45,8 +45,9 @@ public class FlappyBird extends Frame implements RlEnv {
 
     private final NDManager manager;
     private final ReplayBuffer replayBuffer;
-    private final BufferedImage currentImg = new BufferedImage(FRAME_WIDTH, FRAME_HEIGHT, BufferedImage.TYPE_4BYTE_ABGR);
-    private State currentState;
+    private BufferedImage currentImg;
+    private NDList currentObservation;
+    private ActionSpace actionSpace;
 
     /**
      * Constructs a {@link FlappyBird} with a basic {@link LruReplayBuffer}.
@@ -62,6 +63,12 @@ public class FlappyBird extends Frame implements RlEnv {
             initFrame();
             this.setVisible(true);
         }
+        actionSpace = new ActionSpace();
+        actionSpace.add(new NDList(manager.create(DO_NOTHING)));
+        actionSpace.add(new NDList(manager.create(FLAP)));
+
+        currentImg = new BufferedImage(FRAME_WIDTH, FRAME_HEIGHT, BufferedImage.TYPE_4BYTE_ABGR);
+        currentObservation = createObservation(currentImg);
         ground = new Ground();
         gameElement = new GameElementLayer();
         bird = new Bird();
@@ -77,7 +84,6 @@ public class FlappyBird extends Frame implements RlEnv {
     public FlappyBird(NDManager manager, ReplayBuffer replayBuffer) {
         this.manager = manager;
         this.replayBuffer = replayBuffer;
-        this.currentState = new State(createObservation(currentImg), currentReward, currentTerminal);
     }
 
     public static int gameStep = 0;
@@ -97,10 +103,10 @@ public class FlappyBird extends Frame implements RlEnv {
         // run the game
         NDList action = agent.chooseAction(this, training);
         step(action, training);
-        if(training) {
+        if (training) {
             batchSteps = this.getBatch();
         }
-        if (gameStep % 5000 == 0){
+        if (gameStep % 5000 == 0) {
             this.closeStep();
         }
         if (gameStep <= OBSERVE) {
@@ -132,10 +138,11 @@ public class FlappyBird extends Frame implements RlEnv {
             }
         }
 
-        State preState = new State(currentState.getObservation(), currentReward, currentTerminal);
-        currentState = new State(createObservation(currentImg), currentReward, currentTerminal);
+        NDList preObservation = currentObservation;
+        currentObservation = createObservation(currentImg);
 
-        FlappyBirdStep step = new FlappyBirdStep(manager.newSubManager(), preState, currentState, action);
+        FlappyBirdStep step = new FlappyBirdStep(manager.newSubManager(),
+                preObservation, currentObservation, action, currentReward, currentTerminal);
         if (training) {
             replayBuffer.addStep(step);
         }
@@ -155,7 +162,7 @@ public class FlappyBird extends Frame implements RlEnv {
      */
     @Override
     public NDList getObservation() {
-        return currentState.getObservation();
+        return currentObservation;
     }
 
     /**
@@ -163,7 +170,7 @@ public class FlappyBird extends Frame implements RlEnv {
      */
     @Override
     public ActionSpace getActionSpace() {
-        return currentState.getActionSpace(manager);
+        return this.actionSpace;
     }
 
     /**
@@ -174,6 +181,9 @@ public class FlappyBird extends Frame implements RlEnv {
         return replayBuffer.getBatch();
     }
 
+    /**
+     * Close the steps in replayBuffer which are not pointed to.
+     */
     public void closeStep() {
         replayBuffer.closeStep();
     }
@@ -224,19 +234,63 @@ public class FlappyBird extends Frame implements RlEnv {
         }
     }
 
-    static final class FlappyBirdStep implements RlEnv.Step, Cloneable {
+    static final class FlappyBirdStep implements RlEnv.Step {
         private final NDManager manager;
-        private final State preState;
-        private final State postState;
+        private final NDList preObservation;
+        private final NDList postObservation;
         private final NDList action;
+        private final float reward;
+        private final boolean terminal;
 
-        private FlappyBirdStep(NDManager manager, State preState, State postState, NDList action)  {
+
+        private FlappyBirdStep(NDManager manager, NDList preObservation, NDList postObservation, NDList action, float reward, boolean terminal) {
             this.manager = manager;
-            this.preState = preState;
-            this.postState = postState;
+            this.preObservation = preObservation;
+            this.postObservation = postObservation;
             this.action = action;
+            this.reward = reward;
+            this.terminal = terminal;
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public NDList getPreObservation(NDManager manager) {
+            preObservation.attach(manager);
+            return preObservation;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public NDList getPreObservation() {
+            return preObservation;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public NDList getPostObservation(NDManager manager) {
+            postObservation.attach(manager);
+            return postObservation;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public NDList getPostObservation() {
+            return postObservation;
+        }
+
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
         public NDManager getManager() {
             return this.manager;
         }
@@ -253,48 +307,16 @@ public class FlappyBird extends Frame implements RlEnv {
          * {@inheritDoc}
          */
         @Override
-        public NDList getPreObservation(NDManager manager) {
-            return preState.getObservation(manager);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public NDList getPostObservation(NDManager manager) {
-            return postState.getObservation(manager);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void attachPostStateManager(NDManager manager) {
-            postState.attachManager(manager);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void attachPreStateManager(NDManager manager) {
-            preState.attachManager(manager);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
         public NDArray getReward() {
-            return manager.create(postState.getReward());
+            return manager.create(reward);
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public boolean isDone() {
-            return postState.isTerminal();
+        public boolean isTerminal() {
+            return terminal;
         }
 
         /**
@@ -304,47 +326,6 @@ public class FlappyBird extends Frame implements RlEnv {
         public void close() {
             this.manager.close();
         }
-    }
-
-    private static final class State {
-        private final NDList observation;
-        private final float reward;
-        private final boolean terminal;
-
-        private State(NDList observation, float reward, boolean terminal) {
-            this.observation = observation;
-            this.reward = reward;
-            this.terminal = terminal;
-        }
-
-        private NDList getObservation() {
-            return this.observation;
-        }
-
-        private NDList getObservation(NDManager manager) {
-            observation.attach(manager);
-            return this.observation;
-        }
-
-        private void attachManager(NDManager manager) {
-            observation.attach(manager);
-        }
-
-        private ActionSpace getActionSpace(NDManager manager) {
-            ActionSpace actionSpace = new ActionSpace();
-            actionSpace.add(new NDList(manager.create(DO_NOTHING)));
-            actionSpace.add(new NDList(manager.create(FLAP)));
-            return actionSpace;
-        }
-
-        private float getReward() {
-            return reward;
-        }
-
-        private boolean isTerminal() {
-            return terminal;
-        }
-
     }
 
     /**

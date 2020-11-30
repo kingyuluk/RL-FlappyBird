@@ -98,7 +98,7 @@ public class QAgent implements RlAgent {
 
             NDArray[] targetQValue = new NDArray[batchSteps.length];
             for (int i = 0; i < batchSteps.length; i++) {
-                if (batchSteps[i].isDone()) {
+                if (batchSteps[i].isTerminal()) {
                     targetQValue[i] = batchSteps[i].getReward();
                 } else {
                     targetQValue[i] = targetQReward.singletonOrThrow().get(i)
@@ -118,8 +118,8 @@ public class QAgent implements RlAgent {
             this.trainer.step();
         }
         for (Step step : batchSteps) {
-            step.attachPostStateManager(step.getManager());
-            step.attachPreStateManager(step.getManager());
+            step.getPreObservation().attach(step.getManager());
+            step.getPostObservation().attach(step.getManager());
         }
         temporaryManager.close();  // close the temporary manager
     }
