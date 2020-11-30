@@ -11,7 +11,9 @@
 
 This project is a basic application of Reinforcement Learning.
 
-It integrates [Deep Java Library (DJL)](https://github.com/awslabs/djl) to uses DQN to train agent.
+![](bird.gif)
+
+It integrates [Deep Java Library (DJL)](https://github.com/awslabs/djl) to uses DQN to train agent. The pretrained model are trained with 3M steps on a single GPU.
 
 ## Build the project and run
 This project supports building with Maven, you can use the following command to build: 
@@ -24,9 +26,14 @@ The following command will start to train without graphics:
 mvn exec:java -Dexec.mainClass="com.kingyu.rlbird.ai.TrainBird"
 ```
 
-You can also run with arguments.The following command will test the model with graphics.
+The above command will train from scratch. You can also try to train with the pretrained weight:
 ```
-mvn exec:java -Dexec.mainClass="com.kingyu.rlbird.ai.TrainBird" -Dexec.args="-g -p -t"  
+mvn exec:java -Dexec.mainClass="com.kingyu.rlbird.ai.TrainBird" -Dexec.args="-p"
+```
+
+To test with the model directly, you can do the followings
+```
+mvn exec:java -Dexec.mainClass="com.kingyu.rlbird.ai.TrainBird" -Dexec.args="-p -t"  
 ```
 
 | Argument   | Comments                                 |
