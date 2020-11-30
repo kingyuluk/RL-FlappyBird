@@ -68,7 +68,7 @@ public class Arguments {
         return batchSize;
     }
 
-    public boolean isPreTrained() {
+    public boolean usePreTrained() {
         return preTrained;
     }
 

@@ -2,12 +2,6 @@ package com.kingyu.rlbird.ai;
 
 import ai.djl.MalformedModelException;
 import ai.djl.Model;
-import ai.djl.training.evaluator.Accuracy;
-import ai.djl.training.initializer.NormalInitializer;
-import ai.djl.training.optimizer.Adam;
-import com.kingyu.rlbird.rl.agent.EpsilonGreedy;
-import com.kingyu.rlbird.rl.agent.QAgent;
-import com.kingyu.rlbird.rl.agent.RlAgent;
 import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.nn.Activation;
@@ -17,11 +11,17 @@ import ai.djl.nn.convolutional.Conv2d;
 import ai.djl.nn.core.Linear;
 import ai.djl.training.DefaultTrainingConfig;
 import ai.djl.training.Trainer;
+import ai.djl.training.evaluator.Accuracy;
+import ai.djl.training.initializer.NormalInitializer;
 import ai.djl.training.listener.TrainingListener;
 import ai.djl.training.loss.Loss;
+import ai.djl.training.optimizer.Adam;
 import ai.djl.training.tracker.LinearTracker;
 import ai.djl.training.tracker.Tracker;
 import com.kingyu.rlbird.game.FlappyBird;
+import com.kingyu.rlbird.rl.agent.EpsilonGreedy;
+import com.kingyu.rlbird.rl.agent.QAgent;
+import com.kingyu.rlbird.rl.agent.RlAgent;
 import com.kingyu.rlbird.rl.env.RlEnv;
 import com.kingyu.rlbird.util.Arguments;
 import com.kingyu.rlbird.util.Constant;
@@ -29,70 +29,64 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-public class TrainBird {
+public final class TrainBird {
     private static final Logger logger = LoggerFactory.getLogger(TrainBird.class);
 
-    public final static int OBSERVE = 1000; // gameSteps to observe before training
-    public final static int EXPLORE = 3000000; // frames over which to anneal epsilon
-    public final static int SAVE_EVERY_STEPS = 100000; // save model every 100,000 step
+    public static final int OBSERVE = 1000; // gameSteps to observe before training
+    public static final int EXPLORE = 3000000; // frames over which to anneal epsilon
+    public static final int SAVE_EVERY_STEPS = 100000; // save model every 100,000 step
+    public static final int REPLAY_BUFFER_SIZE = 50000; // number of previous transitions to remember
+    public static final float REWARD_DISCOUNT = 0.9f; // decay rate of past observations
+    public static final float INITIAL_EPSILON = 0.01f;
+    public static final float FINAL_EPSILON = 0.0001f;
+    public static final String PARAMS_PREFIX = "dqn-trained";
+
     static RlEnv.Step[] batchSteps;
 
-    private TrainBird() {
-    }
+    private TrainBird() {}
 
-    public static void main(String[] args) throws ParseException {
-        TrainBird.train(args);
-    }
-
-    public static void train(String[] args) throws ParseException {
+    public static void main(String[] args) throws ParseException, IOException, MalformedModelException {
         Arguments arguments = Arguments.parseArgs(args);
+        Model model = createOrLoadModel(arguments);
+        if (arguments.isTesting()) {
+            test(model);
+        } else {
+            train(arguments, model);
+        }
+    }
+
+    public static Model createOrLoadModel(Arguments arguments) throws IOException, MalformedModelException {
+        Model model = Model.newInstance("QNetwork");
+        model.setBlock(getBlock());
+        if (arguments.usePreTrained()) {
+            model.load(Paths.get(Constant.MODEL_PATH), PARAMS_PREFIX);
+        }
+        return model;
+    }
+
+    public static void train(Arguments arguments, Model model) {
         boolean withGraphics = arguments.withGraphics();
         boolean training = !arguments.isTesting();
         int batchSize = arguments.getBatchSize();  // size of mini batch
-        String modelParamsPath = Constant.MODEL_PATH;
-        String modelParamsName = "dqn-trained";
 
-        int replayBufferSize = 50000; // number of previous transitions to remember;
-        float rewardDiscount = 0.9f;  // decay rate of past observations
-        float INITIAL_EPSILON = 0.01f;
-        float FINAL_EPSILON = 0.0001f;
-
-        FlappyBird game = new FlappyBird(NDManager.newBaseManager(), batchSize, replayBufferSize, withGraphics);
-        SequentialBlock block = getBlock();
-
-        try (Model model = Model.newInstance("QNetwork")) {
-            model.setBlock(block);
-
-            if (arguments.isPreTrained()) {
-                File file = new File(modelParamsPath + "/" + modelParamsName + "-0000.params");
-                if (file.exists()) {
-                    try {
-                        model.load(Paths.get(modelParamsPath), modelParamsName);
-                        logger.info("Model load successfully");
-                    } catch (MalformedModelException | IOException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    logger.info("Model doesn't exist");
-                }
-            } else {
-                logger.info("Start training");
-            }
+        FlappyBird game = new FlappyBird(NDManager.newBaseManager(), batchSize, REPLAY_BUFFER_SIZE, withGraphics);
 
             DefaultTrainingConfig config = setupTrainingConfig();
             try (Trainer trainer = model.newTrainer(config)) {
                 trainer.initialize(new Shape(batchSize, 4, 80, 80));
-
                 trainer.notifyListeners(listener -> listener.onTrainingBegin(trainer));
 
-                RlAgent agent = new QAgent(trainer, rewardDiscount);
+                RlAgent agent = new QAgent(trainer, REWARD_DISCOUNT);
                 Tracker exploreRate =
                         new LinearTracker.Builder()
                                 .setBaseValue(INITIAL_EPSILON)
@@ -123,6 +117,16 @@ public class TrainBird {
                 } finally {
                     executorService.shutdown();
                 }
+            }
+    }
+
+    public static void test(Model model) {
+        FlappyBird game = new FlappyBird(NDManager.newBaseManager(), 1, 1, true);
+        DefaultTrainingConfig config = setupTrainingConfig();
+        try (Trainer trainer = model.newTrainer(config)) {
+            RlAgent agent = new QAgent(trainer, REWARD_DISCOUNT);
+            while (true) {
+                game.runEnvironment(agent, false);
             }
         }
     }
@@ -171,7 +175,6 @@ public class TrainBird {
             return null;
         }
     }
-
 
     public static SequentialBlock getBlock() {
         // conv -> conv -> conv -> fc -> fc
