@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -73,19 +74,19 @@ public class QAgent implements RlAgent {
         NDManager temporaryManager = NDManager.newBaseManager();
 
         NDList preObservationBatch = new NDList();
-        Arrays.stream(batchSteps).forEach(step -> preObservationBatch.addAll(step.getPreObservation(temporaryManager)));
-        NDList preInput = new NDList(NDArrays.concat(preObservationBatch, 0));
-
         NDList postObservationBatch = new NDList();
-        Arrays.stream(batchSteps).forEach(step -> postObservationBatch.addAll(step.getPostObservation(temporaryManager)));
-        NDList postInput = new NDList(NDArrays.concat(postObservationBatch, 0));
-
         NDList actionBatch = new NDList();
-        Arrays.stream(batchSteps).forEach(step -> actionBatch.addAll(step.getAction()));
-        NDList actionInput = new NDList(NDArrays.stack(actionBatch, 0));
-
         NDList rewardBatch = new NDList();
-        Arrays.stream(batchSteps).forEach(step -> rewardBatch.addAll(new NDList(step.getReward())));
+        ArrayList<Boolean> isTerminal = new ArrayList<>(batchSteps.length);
+
+        Arrays.stream(batchSteps).forEach(step ->
+                step.addStepToBatch(temporaryManager,
+                        preObservationBatch, postObservationBatch,
+                        actionBatch, rewardBatch, isTerminal));
+
+        NDList preInput = new NDList(NDArrays.concat(preObservationBatch, 0));
+        NDList postInput = new NDList(NDArrays.concat(postObservationBatch, 0));
+        NDList actionInput = new NDList(NDArrays.stack(actionBatch, 0));
         NDList rewardInput = new NDList(NDArrays.stack(rewardBatch, 0));
 
         try (GradientCollector collector = trainer.newGradientCollector()) {
@@ -98,8 +99,8 @@ public class QAgent implements RlAgent {
 
             NDArray[] targetQValue = new NDArray[batchSteps.length];
             for (int i = 0; i < batchSteps.length; i++) {
-                if (batchSteps[i].isTerminal()) {
-                    targetQValue[i] = batchSteps[i].getReward();
+                if (isTerminal.get(i)) {
+                    targetQValue[i] = rewardBatch.get(i);
                 } else {
                     targetQValue[i] = targetQReward.singletonOrThrow().get(i)
                             .max()

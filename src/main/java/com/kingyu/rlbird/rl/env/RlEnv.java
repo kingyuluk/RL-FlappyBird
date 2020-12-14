@@ -6,6 +6,8 @@ import com.kingyu.rlbird.rl.agent.RlAgent;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
 
+import java.util.ArrayList;
+
 /**
  * An environment to use for reinforcement learning.
  */
@@ -129,5 +131,9 @@ public interface RlEnv extends AutoCloseable {
          */
         @Override
         void close();
+
+        void addStepToBatch(NDManager temporaryManager,
+                            NDList preObservationBatch, NDList postObservationBatch,
+                            NDList actionBatch, NDList rewardBatch, ArrayList<Boolean> terminalBatch);
     }
 }

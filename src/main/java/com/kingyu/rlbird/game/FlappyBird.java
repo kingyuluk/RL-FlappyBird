@@ -252,6 +252,17 @@ public class FlappyBird extends Frame implements RlEnv {
             this.terminal = terminal;
         }
 
+        @Override
+        public synchronized void addStepToBatch(NDManager temporaryManager,
+                                                NDList preObservationBatch, NDList postObservationBatch,
+                                                NDList actionBatch, NDList rewardBatch, ArrayList<Boolean> terminalBatch) {
+            preObservationBatch.addAll(this.getPreObservation(temporaryManager));
+            postObservationBatch.addAll(this.getPostObservation(temporaryManager));
+            actionBatch.addAll(this.getAction());
+            rewardBatch.addAll(new NDList(this.getReward()));
+            terminalBatch.add(this.isTerminal());
+        }
+
         /**
          * {@inheritDoc}
          */
@@ -323,7 +334,7 @@ public class FlappyBird extends Frame implements RlEnv {
          * {@inheritDoc}
          */
         @Override
-        public void close() {
+        public synchronized void close() {
             this.manager.close();
         }
     }
