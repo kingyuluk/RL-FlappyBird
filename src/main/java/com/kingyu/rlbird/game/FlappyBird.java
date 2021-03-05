@@ -1,17 +1,16 @@
 package com.kingyu.rlbird.game;
 
-import com.kingyu.rlbird.game.component.Bird;
-import com.kingyu.rlbird.game.component.Ground;
-import com.kingyu.rlbird.game.component.GameElementLayer;
-import com.kingyu.rlbird.rl.ActionSpace;
-import com.kingyu.rlbird.rl.LruReplayBuffer;
-import com.kingyu.rlbird.rl.ReplayBuffer;
-import com.kingyu.rlbird.rl.agent.RlAgent;
-import com.kingyu.rlbird.rl.env.RlEnv;
+import ai.djl.modality.rl.ActionSpace;
+import ai.djl.modality.rl.LruReplayBuffer;
+import ai.djl.modality.rl.ReplayBuffer;
+import ai.djl.modality.rl.env.RlEnv;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDArrays;
 import ai.djl.ndarray.NDList;
 import ai.djl.ndarray.NDManager;
+import com.kingyu.rlbird.game.component.Bird;
+import com.kingyu.rlbird.game.component.GameElementLayer;
+import com.kingyu.rlbird.game.component.Ground;
 import com.kingyu.rlbird.util.Constant;
 import com.kingyu.rlbird.util.GameUtil;
 import org.slf4j.Logger;
@@ -21,7 +20,9 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Queue;
 
 import static com.kingyu.rlbird.ai.TrainBird.OBSERVE;
 import static com.kingyu.rlbird.util.Constant.*;
@@ -47,7 +48,7 @@ public class FlappyBird extends Frame implements RlEnv {
     private final ReplayBuffer replayBuffer;
     private BufferedImage currentImg;
     private NDList currentObservation;
-    private ActionSpace actionSpace;
+    ActionSpace actionSpace;
 
     /**
      * Constructs a {@link FlappyBird} with a basic {@link LruReplayBuffer}.
@@ -94,37 +95,18 @@ public class FlappyBird extends Frame implements RlEnv {
 
     /**
      * {@inheritDoc}
+     * action[0] == 1 : do nothing
+     * action[1] == 1 : flap the bird
      */
     @Override
-    public Step[] runEnvironment(RlAgent agent, boolean training) {
-        Step[] batchSteps = new Step[0];
-        reset();
-
-        // run the game
-        NDList action = agent.chooseAction(this, training);
-        step(action, training);
-        if (training) {
-            batchSteps = this.getBatch();
-        }
-        if (gameStep % 5000 == 0) {
-            this.closeStep();
-        }
+    public Step step(NDList action, boolean training) {
         if (gameStep <= OBSERVE) {
             trainState = "observe";
         } else {
             trainState = "explore";
         }
         gameStep++;
-        return batchSteps;
-    }
 
-    /**
-     * {@inheritDoc}
-     * action[0] == 1 : do nothing
-     * action[1] == 1 : flap the bird
-     */
-    @Override
-    public void step(NDList action, boolean training) {
         if (action.singletonOrThrow().getInt(1) == 1) {
             bird.birdFlap();
         }
@@ -155,6 +137,8 @@ public class FlappyBird extends Frame implements RlEnv {
         if (gameState == GAME_OVER) {
             restartGame();
         }
+
+        return step;
     }
 
     /**
@@ -179,13 +163,6 @@ public class FlappyBird extends Frame implements RlEnv {
     @Override
     public Step[] getBatch() {
         return replayBuffer.getBatch();
-    }
-
-    /**
-     * Close the steps in replayBuffer which are not pointed to.
-     */
-    public void closeStep() {
-        replayBuffer.closeStep();
     }
 
     /**
@@ -256,26 +233,8 @@ public class FlappyBird extends Frame implements RlEnv {
          * {@inheritDoc}
          */
         @Override
-        public NDList getPreObservation(NDManager manager) {
-            preObservation.attach(manager);
-            return preObservation;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
         public NDList getPreObservation() {
             return preObservation;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public NDList getPostObservation(NDManager manager) {
-            postObservation.attach(manager);
-            return postObservation;
         }
 
         /**
@@ -286,14 +245,11 @@ public class FlappyBird extends Frame implements RlEnv {
             return postObservation;
         }
 
-
-        /**
-         * {@inheritDoc}
-         */
         @Override
-        public NDManager getManager() {
-            return this.manager;
-        }
+        public ActionSpace getPostActionSpace() { return null; }
+
+        @Override
+        public boolean isDone() { return gameStep % 5000 == 0 || terminal; }
 
         /**
          * {@inheritDoc}
@@ -309,14 +265,6 @@ public class FlappyBird extends Frame implements RlEnv {
         @Override
         public NDArray getReward() {
             return manager.create(reward);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean isTerminal() {
-            return terminal;
         }
 
         /**

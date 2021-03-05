@@ -2,6 +2,9 @@ package com.kingyu.rlbird.ai;
 
 import ai.djl.MalformedModelException;
 import ai.djl.Model;
+import ai.djl.modality.rl.agent.EpsilonGreedy;
+import ai.djl.modality.rl.agent.RlAgent;
+import ai.djl.modality.rl.env.RlEnv;
 import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.nn.Activation;
@@ -19,10 +22,7 @@ import ai.djl.training.optimizer.Adam;
 import ai.djl.training.tracker.LinearTracker;
 import ai.djl.training.tracker.Tracker;
 import com.kingyu.rlbird.game.FlappyBird;
-import com.kingyu.rlbird.rl.agent.EpsilonGreedy;
 import com.kingyu.rlbird.rl.agent.QAgent;
-import com.kingyu.rlbird.rl.agent.RlAgent;
-import com.kingyu.rlbird.rl.env.RlEnv;
 import com.kingyu.rlbird.util.Arguments;
 import com.kingyu.rlbird.util.Constant;
 import org.apache.commons.cli.ParseException;
@@ -88,7 +88,7 @@ public final class TrainBird {
 
                 RlAgent agent = new QAgent(trainer, REWARD_DISCOUNT);
                 Tracker exploreRate =
-                        new LinearTracker.Builder()
+                        LinearTracker.builder()
                                 .setBaseValue(INITIAL_EPSILON)
                                 .optSlope(-(INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE)
                                 .optMinValue(FINAL_EPSILON)
@@ -170,7 +170,8 @@ public final class TrainBird {
         @Override
         public Object call() {
             while (FlappyBird.trainStep < EXPLORE) {
-                batchSteps = game.runEnvironment(agent, training);
+                game.runEnvironment(agent, training);
+                batchSteps = game.getBatch();
             }
             return null;
         }

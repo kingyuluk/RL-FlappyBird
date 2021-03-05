@@ -23,13 +23,13 @@
         <dependency>
             <groupId>ai.djl</groupId>
             <artifactId>api</artifactId>
-            <version>0.8.0</version>
+            <version>0.10.0</version>
         </dependency>
 
         <dependency>
             <groupId>ai.djl.mxnet</groupId>
             <artifactId>mxnet-engine</artifactId>
-            <version>0.8.0</version>
+            <version>0.10.0</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -68,13 +68,13 @@
         <dependency>
             <groupId>ai.djl</groupId>
             <artifactId>basicdataset</artifactId>
-            <version>0.8.0</version>
+            <version>0.10.0</version>
         </dependency>
 
         <dependency>
             <groupId>ai.djl</groupId>
             <artifactId>model-zoo</artifactId>
-            <version>0.8.0</version>
+            <version>0.10.0</version>
         </dependency>
 
         <dependency>
