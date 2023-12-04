@@ -16,7 +16,7 @@ This project is a basic application of Reinforcement Learning.
 It integrates [Deep Java Library (DJL)](https://github.com/awslabs/djl) to uses DQN to train agent. The pretrained model are trained with 3M steps on a single GPU.
 
 You can find article explaining the training process on [towards data science](https://towardsdatascience.com/train-undying-flappy-bird-using-reinforcement-learning-on-java-98ff68eb28bf), or 
-[中文版文章](https://editor.csdn.net/md/?articleId=114109697).
+[中文版文章](https://blog.csdn.net/weixin_45687193/article/details/114109697?csdn_share_tail=%7B%22type%22%3A%22blog%22%2C%22rType%22%3A%22article%22%2C%22rId%22%3A%22114109697%22%2C%22source%22%3A%22weixin_45687193%22%7D).
 
 ## Build the project and run
 This project supports building with Maven, you can use the following command to build: 
